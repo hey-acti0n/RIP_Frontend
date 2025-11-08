@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Material } from '../types/api';
+import type { Material } from '../types/api';
 import { apiService } from '../services/api';
 import Breadcrumbs from '../components/Breadcrumbs';
 import './MaterialDetailPage.css';
@@ -80,7 +80,7 @@ const MaterialDetailPage: React.FC = () => {
     );
   }
 
-  const defaultImage = '/default-material.jpg';
+  const defaultImage = '/logo.png';
   const formatProps = () => {
     const props = [];
     if (material.density) props.push(`Плотность: ${material.density} г/см³`);

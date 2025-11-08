@@ -1,5 +1,5 @@
 import React from 'react';
-import { Material } from '../types/api';
+import type { Material } from '../types/api';
 import './MaterialCard.css';
 
 interface MaterialCardProps {
@@ -13,7 +13,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   onViewDetails, 
   onAddToCart 
 }) => {
-  const defaultImage = '/default-material.jpg';
+  const defaultImage = '/logo.png';
   
   const formatProps = () => {
     const props = [];

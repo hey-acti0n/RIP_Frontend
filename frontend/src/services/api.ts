@@ -1,5 +1,5 @@
 // Типы для API материалов
-import type { Material, MaterialFilters, Pagination, PaginationResponse } from '../types/api';
+import type { Material, MaterialFilters, PaginationResponse } from '../types/api';
 
 // Типы для расчетов
 interface Calculation {
@@ -81,8 +81,9 @@ class ApiService {
     }
   }
 
-  // Проверка доступности API
-  private async checkApiAvailable(): Promise<boolean> {
+  // Проверка доступности API (не используется, но оставлено для будущего использования)
+  // @ts-ignore
+  private async _checkApiAvailable(): Promise<boolean> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 секунды таймаут

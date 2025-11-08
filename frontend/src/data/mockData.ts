@@ -4,7 +4,7 @@ import type { Material } from '../types/api';
  * Mock данные для демонстрации при недоступности API
  */
 
-const DEFAULT_IMAGE_URL = '/default-material.jpg';
+const DEFAULT_IMAGE_URL = '/logo.png';
 
 export const mockMaterials: Material[] = [
   {

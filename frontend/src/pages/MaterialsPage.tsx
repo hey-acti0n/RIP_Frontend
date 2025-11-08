@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Material, MaterialFilters, MaterialFiltersForm, PaginationResponse } from '../types/api';
+import type { Material, MaterialFilters, MaterialFiltersForm, PaginationResponse } from '../types/api';
 import { apiService } from '../services/api';
 import Breadcrumbs from '../components/Breadcrumbs';
 import MaterialCard from '../components/MaterialCard';

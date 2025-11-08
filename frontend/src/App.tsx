@@ -394,7 +394,7 @@ const HomePage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/default-material.jpg";
+                (e.target as HTMLImageElement).src = "/logo.png";
               }}
             />
           </a>
@@ -432,7 +432,7 @@ const HomePage: React.FC = () => {
                 alt="search"
                 style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = "/logo.png";
                 }}
               />
             </button>
@@ -446,7 +446,7 @@ const HomePage: React.FC = () => {
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/default-material.jpg";
+                            (e.target as HTMLImageElement).src = "/logo.png";
                           }}
                         />
                       </a>
@@ -593,7 +593,7 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = "/logo.png";
                 }}
               />
             </a>
@@ -631,7 +631,7 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = "/logo.png";
                 }}
               />
             </a>
@@ -666,7 +666,7 @@ const MaterialDetailPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/default-material.jpg";
+                (e.target as HTMLImageElement).src = "/logo.png";
               }}
             />
           </a>
@@ -704,7 +704,7 @@ const MaterialDetailPage: React.FC = () => {
                 src={material.image_url}
                 alt={material.name}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = "/logo.png";
                 }}
               />
             </div>
@@ -788,7 +788,7 @@ const CartPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/default-material.jpg";
+                (e.target as HTMLImageElement).src = "/logo.png";
               }}
             />
           </a>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MaterialFiltersForm } from '../types/api';
+import type { MaterialFiltersForm } from '../types/api';
 import './MaterialFilters.css';
 
 interface MaterialFiltersProps {
