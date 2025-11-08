@@ -2,8 +2,7 @@ import React from 'react';
 
 interface BreadcrumbItem {
   label: string;
-  path?: string;
-  href?: string; // Для обратной совместимости
+  href?: string;
 }
 
 interface BreadcrumbsProps {
@@ -27,9 +26,9 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
             {index > 0 && (
               <span style={{ margin: '0 8px', color: '#666' }}>›</span>
             )}
-            {(item.path || item.href) ? (
+            {item.href ? (
               <a
-                href={item.path || item.href}
+                href={item.href}
                 style={{
                   color: '#4a9eff',
                   textDecoration: 'none',

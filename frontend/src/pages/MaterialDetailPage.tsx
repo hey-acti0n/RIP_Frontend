@@ -50,7 +50,7 @@ const MaterialDetailPage: React.FC = () => {
       <div className="gradient-bg">
         <div className="container">
           <Breadcrumbs items={[
-            { label: 'Материалы', path: '/materials' },
+            { label: 'Материалы', href: '/materials' },
             { label: 'Загрузка...' }
           ]} />
           <div className="loading">
@@ -66,7 +66,7 @@ const MaterialDetailPage: React.FC = () => {
       <div className="gradient-bg">
         <div className="container">
           <Breadcrumbs items={[
-            { label: 'Материалы', path: '/materials' },
+            { label: 'Материалы', href: '/materials' },
             { label: 'Ошибка' }
           ]} />
           <div className="error">
@@ -80,7 +80,7 @@ const MaterialDetailPage: React.FC = () => {
     );
   }
 
-  const defaultImage = '/logo.png';
+  const defaultImage = '/default-material.jpg';
   const formatProps = () => {
     const props = [];
     if (material.density) props.push(`Плотность: ${material.density} г/см³`);

@@ -114,8 +114,15 @@ class ApiService {
           density_min: filters.density_min,
           density_max: filters.density_max
         });
+        
+        // Используем логотип для всех mock материалов
+        const mockDataWithLogo = filtered.map(material => ({
+          ...material,
+          image_url: '/logo.png'
+        }));
+        
         return createMockPaginationResponse(
-          filtered,
+          mockDataWithLogo,
           filters.page || 1,
           filters.limit || 10
         );
@@ -148,8 +155,15 @@ class ApiService {
         density_min: filters.density_min,
         density_max: filters.density_max
       });
+      
+      // Используем логотип для всех mock материалов
+      const mockDataWithLogo = filtered.map(material => ({
+        ...material,
+        image_url: '/logo.png'
+      }));
+      
       return createMockPaginationResponse(
-        filtered,
+        mockDataWithLogo,
         filters.page || 1,
         filters.limit || 10
       );
@@ -164,7 +178,10 @@ class ApiService {
         console.log('Using mock material data for id:', id);
         const mockMaterial = getMockMaterial(id);
         if (mockMaterial) {
-          return mockMaterial;
+          return {
+            ...mockMaterial,
+            image_url: '/logo.png' // Используем логотип для mock материала
+          };
         }
         throw new Error('Material not found');
       }
@@ -176,7 +193,10 @@ class ApiService {
       // Fallback на mock данные
       const mockMaterial = getMockMaterial(id);
       if (mockMaterial) {
-        return mockMaterial;
+        return {
+          ...mockMaterial,
+          image_url: '/logo.png' // Используем логотип для mock материала
+        };
       }
       throw error;
     }

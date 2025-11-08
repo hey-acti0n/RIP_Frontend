@@ -58,26 +58,28 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       const cartInfo = await apiService.getCartInfo();
       setCalculationId(cartInfo.calculation_id);
       
+      // Проверяем, есть ли активный расчет (calculation_id > 0)
+      if (!cartInfo.calculation_id || cartInfo.calculation_id === 0) {
+        console.log('No active calculation found, cart is empty');
+        setCart([]);
+        setComments({});
+        // Fallback на localStorage
+        loadCartFromStorage();
+        return;
+      }
+      
       // Затем получаем материалы расчета
       const materials = await apiService.getCalculationMaterials(cartInfo.calculation_id);
       
       // Конвертируем материалы из БД в формат корзины
-      // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
-      const processImageUrl = (url: string): string => {
-        // Если уже полный URL (http/https) - оставляем как есть
-        if (url.startsWith('http')) return url;
-        // Если начинается с '/' - это локальный файл (логотип для mock данных)
-        if (url.startsWith('/')) return url;
-        // Иначе - это путь из MinIO, добавляем базовый URL
-        return `http://localhost:9000${url}`;
-      };
-
       const cartItems: CartItem[] = materials.map(item => ({
         material: {
           id: item.material.id,
           name: item.material.name,
           description: item.material.description,
-          image_url: processImageUrl(item.material.image_url),
+          image_url: item.material.image_url.startsWith('http') || item.material.image_url.startsWith('/logo') || item.material.image_url === '/logo.png'
+            ? item.material.image_url 
+            : `http://localhost:9000${item.material.image_url}`,
           is_active: item.material.is_active,
           density: item.material.density,
           thickness: item.material.thickness,
@@ -324,17 +326,13 @@ const HomePage: React.FC = () => {
         });
         console.log('API response:', response);
         
-        // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
-        const processImageUrl = (url: string): string => {
-          if (url.startsWith('http')) return url;
-          if (url.startsWith('/')) return url; // Локальный файл (логотип для mock данных)
-          return `http://localhost:9000${url}`; // Путь из MinIO
-        };
-
         // Обрабатываем URL изображений для MinIO
+        // Если это логотип или путь начинается с '/', не добавляем localhost:9000
         const materialsWithFullUrls = response.data.map((material: Material) => ({
           ...material,
-          image_url: processImageUrl(material.image_url),
+          image_url: material.image_url.startsWith('http') || material.image_url.startsWith('/logo') || material.image_url === '/logo.png'
+            ? material.image_url 
+            : `http://localhost:9000${material.image_url}`,
           props: [
             `Плотность: ${material.density} кг/м³`,
             `Толщина: ${material.thickness} мм`,
@@ -369,17 +367,13 @@ const HomePage: React.FC = () => {
         ...filters
       });
       
-      // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
-      const processImageUrl = (url: string): string => {
-        if (url.startsWith('http')) return url;
-        if (url.startsWith('/')) return url; // Локальный файл (логотип для mock данных)
-        return `http://localhost:9000${url}`; // Путь из MinIO
-      };
-
       // Обрабатываем URL изображений для MinIO
+      // Если это логотип, не добавляем localhost:9000
       const materialsWithFullUrls = response.data.map((material: Material) => ({
         ...material,
-        image_url: processImageUrl(material.image_url),
+        image_url: material.image_url.startsWith('http') || material.image_url.startsWith('/logo') || material.image_url === '/logo.png'
+          ? material.image_url 
+          : `http://localhost:9000${material.image_url}`,
         props: [
           `Плотность: ${material.density} кг/м³`,
           `Толщина: ${material.thickness} мм`,
@@ -412,7 +406,7 @@ const HomePage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/logo.png";
+                (e.target as HTMLImageElement).src = "/default-material.jpg";
               }}
             />
           </a>
@@ -450,7 +444,7 @@ const HomePage: React.FC = () => {
                 alt="search"
                 style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/logo.png";
+                  (e.target as HTMLImageElement).src = "/default-material.jpg";
                 }}
               />
             </button>
@@ -464,7 +458,7 @@ const HomePage: React.FC = () => {
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/logo.png";
+                            (e.target as HTMLImageElement).src = "/default-material.jpg";
                           }}
                         />
                       </a>
@@ -569,17 +563,13 @@ const MaterialDetailPage: React.FC = () => {
       try {
         const materialData = await apiService.getMaterial(parseInt(id));
         
-        // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
-        const processImageUrl = (url: string): string => {
-          if (url.startsWith('http')) return url;
-          if (url.startsWith('/')) return url; // Локальный файл (логотип для mock данных)
-          return `http://localhost:9000${url}`; // Путь из MinIO
-        };
-
         // Обрабатываем URL изображения для MinIO
+        // Если это логотип, не добавляем localhost:9000
         const materialWithFullUrl = {
           ...materialData,
-          image_url: processImageUrl(materialData.image_url),
+          image_url: materialData.image_url.startsWith('http') || materialData.image_url.startsWith('/logo') || materialData.image_url === '/logo.png'
+            ? materialData.image_url 
+            : `http://localhost:9000${materialData.image_url}`,
           props: [
             `Плотность: ${materialData.density} кг/м³`,
             `Толщина: ${materialData.thickness} мм`,
@@ -616,7 +606,7 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/logo.png";
+                  (e.target as HTMLImageElement).src = "/default-material.jpg";
                 }}
               />
             </a>
@@ -654,7 +644,7 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/logo.png";
+                  (e.target as HTMLImageElement).src = "/default-material.jpg";
                 }}
               />
             </a>
@@ -689,7 +679,7 @@ const MaterialDetailPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/logo.png";
+                (e.target as HTMLImageElement).src = "/default-material.jpg";
               }}
             />
           </a>
@@ -727,7 +717,7 @@ const MaterialDetailPage: React.FC = () => {
                 src={material.image_url}
                 alt={material.name}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/logo.png";
+                  (e.target as HTMLImageElement).src = "/default-material.jpg";
                 }}
               />
             </div>
@@ -811,7 +801,7 @@ const CartPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/logo.png";
+                (e.target as HTMLImageElement).src = "/default-material.jpg";
               }}
             />
           </a>
@@ -1026,9 +1016,23 @@ const CartPage: React.FC = () => {
 };
 
 function App() {
+  // Определяем базовый путь для GitHub Pages или локальной разработки
+  // Используем BASE_URL из Vite или определяем из текущего URL
+  let basename = import.meta.env.BASE_URL;
+  
+  // Если BASE_URL не установлен, определяем из текущего пути
+  if (!basename || basename === '/') {
+    const pathname = window.location.pathname;
+    if (pathname.includes('/RIP_Frontend/')) {
+      basename = '/RIP_Frontend';
+    } else {
+      basename = '/';
+    }
+  }
+  
   return (
     <CartProvider>
-      <Router>
+      <Router basename={basename}>
         <div className="App">
           <TopNavbar />
           <Routes>
