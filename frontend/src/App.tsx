@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useDispatch } from "react-redux";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/App.css';
@@ -55,7 +55,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const loadCartFromDB = async () => {
     try {
-      console.log('Loading cart from DB...');
       
       // Сначала получаем информацию о корзине
       const cartInfo = await apiService.getCartInfo();
@@ -63,7 +62,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       
       // Проверяем, есть ли активный расчет (calculation_id > 0)
       if (!cartInfo.calculation_id || cartInfo.calculation_id === 0) {
-        console.log('No active calculation found, cart is empty');
         setCart([]);
         setComments({});
         // Fallback на localStorage
@@ -108,7 +106,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       });
       setComments(commentsMap);
       
-      console.log('Cart loaded from DB:', cartItems);
     } catch (error) {
       console.error('Error loading cart from DB:', error);
       // Fallback на localStorage
@@ -124,7 +121,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         setCart(cartData.cart || []);
         setCalculationId(cartData.calculationId || null);
         setComments(cartData.comments || {});
-        console.log('Cart loaded from storage:', cartData);
       }
     } catch (error) {
       console.error('Error loading cart from storage:', error);
@@ -133,11 +129,8 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const addToCart = async (material: Material) => {
     try {
-      console.log('Adding to cart:', material);
-      
       // Добавляем в БД
       const result = await apiService.addMaterialToCart(material.id, 1);
-      console.log('Added to DB cart:', result);
       
       // Обновляем calculationId если он изменился
       if (result.calculation_id && result.calculation_id !== calculationId) {
@@ -225,13 +218,10 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const clearCart = async () => {
     try {
-      console.log('Clearing cart, calculationId:', calculationId);
-      
       // Если есть активный расчет, удаляем его из БД
       if (calculationId) {
         try {
           await apiService.deleteCalculation(calculationId);
-          console.log('Calculation deleted from DB:', calculationId);
         } catch (error) {
           console.warn('Failed to delete calculation from DB:', error);
         }
@@ -242,8 +232,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       setComments({});
       setCalculationId(null);
       localStorage.removeItem('ultrarezina_cart');
-      
-      console.log('Cart cleared successfully');
     } catch (error) {
       console.error('Error clearing cart:', error);
     }
@@ -251,8 +239,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const formCalculation = async (mass: number, frequency: number) => {
     try {
-      console.log('Forming calculation with mass:', mass, 'frequency:', frequency, 'calculationId:', calculationId);
-      
       if (!calculationId) {
         throw new Error('Нет активного расчета');
       }
@@ -267,7 +253,6 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         natural_frequency: frequency
       });
       
-      console.log('Calculation result from DB:', result);
       return result;
     } catch (error) {
       console.error('Error forming calculation:', error);
@@ -314,15 +299,11 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const { addToCart, getTotalItems } = useCart();
 
-  // Отладочная информация
-  console.log('HomePage - getTotalItems():', getTotalItems());
-
 
   React.useEffect(() => {
     // Загружаем данные из API
     const loadMaterials = async () => {
       try {
-        console.log('Loading materials from API...');
         const apiFilters: any = {
           page: 1,
           limit: 10
@@ -336,7 +317,6 @@ const HomePage: React.FC = () => {
         if (filters.densityMax) apiFilters.density_max = parseFloat(filters.densityMax);
         
         const response = await apiService.getMaterials(apiFilters);
-        console.log('API response:', response);
         
         // Обрабатываем URL изображений для MinIO
         // Если это логотип или путь начинается с '/', не добавляем localhost:9000
@@ -410,7 +390,7 @@ const HomePage: React.FC = () => {
     <div className="gradient-bg">
       <header className="container header">
         <div className="brand">
-          <a href="/" style={{ textDecoration: 'none' }}>
+          <Link to="/" style={{ textDecoration: 'none' }}>
             <img
               src={`${dest_img}/images/logo.png`}
               alt="UltraRezina"
@@ -425,7 +405,7 @@ const HomePage: React.FC = () => {
                 (e.target as HTMLImageElement).src = "/default-material.jpg";
               }}
             />
-          </a>
+          </Link>
         </div>
       </header>
       
@@ -484,9 +464,9 @@ const HomePage: React.FC = () => {
               />
             </button>
                     <div className="cart-container">
-                      <a
+                      <Link
                         className="icon-btn"
-                        href="/cart"
+                        to="/cart"
                       >
                         <img
                           src={`${dest_img}/images/cart_icon.png`}
@@ -496,7 +476,7 @@ const HomePage: React.FC = () => {
                             (e.target as HTMLImageElement).src = "/default-material.jpg";
                           }}
                         />
-                      </a>
+                      </Link>
                       <span className="cart-badge">{getTotalItems()}</span>
                     </div>
           </form>
@@ -513,7 +493,6 @@ const HomePage: React.FC = () => {
             <div className="text-center" style={{ color: 'white', gridColumn: '1 / -1' }}>
               <h3>Материалы не найдены</h3>
               <p>Попробуйте изменить параметры поиска</p>
-              <p>Debug: materials.length = {materials.length}</p>
             </div>
           ) : (
             materials.map((material: Material) => (
@@ -539,15 +518,13 @@ const HomePage: React.FC = () => {
                 </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div className="actions" style={{ flex: 1 }}>
-                            <a className="btn" href={`/materials/${material.id}`}>Подробнее</a>
+                            <Link className="btn" to={`/materials/${material.id}`}>Подробнее</Link>
                             <button 
                               className="btn primary" 
                               type="button"
                               onClick={async () => {
-                                console.log('Add to cart button clicked for material:', material);
                                 try {
                                   await addToCart(material);
-                                  console.log('Material added to cart successfully');
                                 } catch (error) {
                                   console.error('Error adding to cart:', error);
                                 }
@@ -702,7 +679,7 @@ const MaterialDetailPage: React.FC = () => {
     <div className="gradient-bg">
       <header className="container header">
         <div className="brand">
-          <a href="/" style={{ textDecoration: 'none' }}>
+          <Link to="/" style={{ textDecoration: 'none' }}>
             <img
               src={`${dest_img}/images/logo.png`}
               alt="UltraRezina"
@@ -717,7 +694,7 @@ const MaterialDetailPage: React.FC = () => {
                 (e.target as HTMLImageElement).src = "/default-material.jpg";
               }}
             />
-          </a>
+          </Link>
         </div>
       </header>
       
@@ -726,7 +703,7 @@ const MaterialDetailPage: React.FC = () => {
           { label: 'Материалы', href: '/' },
           { label: material.name }
         ]} />
-        <a className="btn" href="/">Назад</a>
+        <Link className="btn" to="/">Назад</Link>
         <section className="panel detail">
           <div className="detail-grid">
             <div>
@@ -803,7 +780,6 @@ const CartPage: React.FC = () => {
     setLoading(true);
     try {
       const result = await formCalculation(parseFloat(mass), parseFloat(frequency));
-      console.log('Calculation result:', result);
       setResults(result.calculation_results || []);
     } catch (error) {
       console.error('Error forming calculation:', error);
@@ -824,7 +800,7 @@ const CartPage: React.FC = () => {
     <div className="gradient-bg">
       <header className="container header">
         <div className="brand">
-          <a href="/" style={{ textDecoration: 'none' }}>
+          <Link to="/" style={{ textDecoration: 'none' }}>
             <img
               src={`${dest_img}/images/logo.png`}
               alt="UltraRezina"
@@ -839,7 +815,7 @@ const CartPage: React.FC = () => {
                 (e.target as HTMLImageElement).src = "/default-material.jpg";
               }}
             />
-          </a>
+          </Link>
         </div>
       </header>
       
@@ -848,7 +824,7 @@ const CartPage: React.FC = () => {
           { label: 'Материалы', href: '/' },
           { label: 'Расчёт' }
         ]} />
-        <a className="btn" href="/">Назад</a>
+        <Link className="btn" to="/">Назад</Link>
         <button
           className="btn"
           onClick={handleClearCart}
@@ -1052,18 +1028,10 @@ const CartPage: React.FC = () => {
 
 function App() {
   // Определяем базовый путь для GitHub Pages или локальной разработки
-  // Используем dest_root из конфигурации или определяем из текущего URL
-  let basename = dest_root;
-  
-  // Если dest_root не установлен, определяем из текущего пути
-  if (!basename || basename === '/') {
-    const pathname = window.location.pathname;
-    if (pathname.includes('/RIP_Frontend/')) {
-      basename = '/RIP_Frontend';
-    } else {
-      basename = '/';
-    }
-  }
+  // В режиме разработки (localhost) basename должен быть "/"
+  // В продакшене (GitHub Pages) basename должен быть "/RIP_Frontend"
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const basename = isDev ? '/' : dest_root;
   
   return (
     <CartProvider>

@@ -40,8 +40,6 @@ const MaterialDetailPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (material) {
-      // TODO: Implement add to cart functionality
-      console.log('Add to cart:', material.id);
     }
   };
 

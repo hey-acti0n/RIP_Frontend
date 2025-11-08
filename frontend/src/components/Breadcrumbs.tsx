@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface BreadcrumbItem {
   label: string;
@@ -27,8 +28,8 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
               <span style={{ margin: '0 8px', color: '#666' }}>›</span>
             )}
             {item.href ? (
-              <a
-                href={item.href}
+              <Link
+                to={item.href}
                 style={{
                   color: '#4a9eff',
                   textDecoration: 'none',
@@ -38,7 +39,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
                 onMouseOut={(e) => e.currentTarget.style.color = '#4a9eff'}
               >
                 {item.label}
-              </a>
+              </Link>
             ) : (
               <span style={{ color: '#fff' }}>{item.label}</span>
             )}

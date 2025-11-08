@@ -106,7 +106,6 @@ class ApiService {
     try {
       // Принудительное использование mock данных
       if (USE_MOCK_DATA) {
-        console.log('Using mock materials data');
         const filtered = filterMockMaterials({
           name: filters.name,
           material: filters.material,
@@ -176,7 +175,6 @@ class ApiService {
     try {
       // Принудительное использование mock данных
       if (USE_MOCK_DATA) {
-        console.log('Using mock material data for id:', id);
         const mockMaterial = getMockMaterial(id);
         if (mockMaterial) {
           return {
