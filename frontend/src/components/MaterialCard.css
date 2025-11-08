@@ -1,0 +1,54 @@
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.card-header h3 {
+  margin: 0;
+  flex: 1;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.card-image-container {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.card-actions .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.material-props {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--muted);
+  text-align: right;
+  max-width: 200px;
+  min-width: 120px;
+}
+
+.material-props div {
+  margin-bottom: 2px;
+}
+
+.material-props div:last-child {
+  margin-bottom: 0;
+}
