@@ -53,8 +53,9 @@ interface MaterialCalculationResult {
 }
 
 import { filterMockMaterials, getMockMaterial, createMockPaginationResponse } from '../data/mockData';
+import { dest_api } from '../config/target_config';
 
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = dest_api.endsWith('/api') ? '/api/v1' : `${dest_api}/v1`;
 const USE_MOCK_DATA = false; // Флаг для принудительного использования mock данных
 
 class ApiService {

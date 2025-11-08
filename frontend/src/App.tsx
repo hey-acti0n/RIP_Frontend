@@ -1,11 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useDispatch } from "react-redux";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/App.css';
 import { apiService } from './services/api';
 import Breadcrumbs from './components/Breadcrumbs';
 import TopNavbar from './components/TopNavbar';
 import type { Material } from './types/api';
+import { useFilters, updateFilterAction, resetFiltersAction } from './store/slices/filtersSlice';
+import { dest_root, dest_img } from './config/target_config';
 
 // Типы для компонентов
 
@@ -305,10 +308,10 @@ const useCart = () => {
 
 // Главная страница в стиле оригинального каталога
 const HomePage: React.FC = () => {
+  const dispatch = useDispatch();
+  const filters = useFilters();
   const [materials, setMaterials] = React.useState<Material[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [thickness, setThickness] = React.useState('');
   const { addToCart, getTotalItems } = useCart();
 
   // Отладочная информация
@@ -320,10 +323,19 @@ const HomePage: React.FC = () => {
     const loadMaterials = async () => {
       try {
         console.log('Loading materials from API...');
-        const response = await apiService.getMaterials({
+        const apiFilters: any = {
           page: 1,
           limit: 10
-        });
+        };
+        
+        if (filters.name) apiFilters.name = filters.name;
+        if (filters.material) apiFilters.material = filters.material;
+        if (filters.thicknessMin) apiFilters.thickness_min = parseFloat(filters.thicknessMin);
+        if (filters.thicknessMax) apiFilters.thickness_max = parseFloat(filters.thicknessMax);
+        if (filters.densityMin) apiFilters.density_min = parseFloat(filters.densityMin);
+        if (filters.densityMax) apiFilters.density_max = parseFloat(filters.densityMax);
+        
+        const response = await apiService.getMaterials(apiFilters);
         console.log('API response:', response);
         
         // Обрабатываем URL изображений для MinIO
@@ -332,7 +344,7 @@ const HomePage: React.FC = () => {
           ...material,
           image_url: material.image_url.startsWith('http') || material.image_url.startsWith('/logo') || material.image_url === '/logo.png'
             ? material.image_url 
-            : `http://localhost:9000${material.image_url}`,
+            : `${dest_img}${material.image_url}`,
           props: [
             `Плотность: ${material.density} кг/м³`,
             `Толщина: ${material.thickness} мм`,
@@ -350,22 +362,26 @@ const HomePage: React.FC = () => {
     };
 
     loadMaterials();
-  }, []);
+  }, [filters]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      const filters: any = {};
-      if (searchQuery) filters.name = searchQuery;
-      if (thickness) filters.thickness_min = parseFloat(thickness);
-      
-      const response = await apiService.getMaterials({
+      const apiFilters: any = {
         page: 1,
-        limit: 10,
-        ...filters
-      });
+        limit: 10
+      };
+      
+      if (filters.name) apiFilters.name = filters.name;
+      if (filters.material) apiFilters.material = filters.material;
+      if (filters.thicknessMin) apiFilters.thickness_min = parseFloat(filters.thicknessMin);
+      if (filters.thicknessMax) apiFilters.thickness_max = parseFloat(filters.thicknessMax);
+      if (filters.densityMin) apiFilters.density_min = parseFloat(filters.densityMin);
+      if (filters.densityMax) apiFilters.density_max = parseFloat(filters.densityMax);
+      
+      const response = await apiService.getMaterials(apiFilters);
       
       // Обрабатываем URL изображений для MinIO
       // Если это логотип, не добавляем localhost:9000
@@ -396,7 +412,7 @@ const HomePage: React.FC = () => {
         <div className="brand">
           <a href="/" style={{ textDecoration: 'none' }}>
             <img
-              src="http://localhost:9000/images/logo.png"
+              src={`${dest_img}/images/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -420,27 +436,46 @@ const HomePage: React.FC = () => {
               className="input"
               type="search"
               placeholder="Поиск материала"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={filters.name}
+              onChange={(e) => dispatch(updateFilterAction({ name: e.target.value }))}
               style={{ flex: 2, minWidth: '240px' }}
             />
             <input
               className="input"
               type="number"
-              placeholder="Толщина (мм)"
-              value={thickness}
-              onChange={(e) => setThickness(e.target.value)}
+              placeholder="Толщина от (мм)"
+              value={filters.thicknessMin}
+              onChange={(e) => dispatch(updateFilterAction({ thicknessMin: e.target.value }))}
               style={{ flex: 1, minWidth: '120px' }}
               min="1"
-              step="1"
+              step="0.1"
+            />
+            <input
+              className="input"
+              type="number"
+              placeholder="Толщина до (мм)"
+              value={filters.thicknessMax}
+              onChange={(e) => dispatch(updateFilterAction({ thicknessMax: e.target.value }))}
+              style={{ flex: 1, minWidth: '120px' }}
+              min="1"
+              step="0.1"
             />
             <button
+              type="button"
+              className="btn"
+              onClick={() => dispatch(resetFiltersAction())}
+              style={{ marginLeft: 'auto' }}
+            >
+              Сбросить
+            </button>
+            <button
+              type="submit"
               className="icon-btn"
               aria-label="search"
-              style={{ background: 'transparent', border: 'none', padding: 0, marginLeft: 'auto' }}
+              style={{ background: 'transparent', border: 'none', padding: 0 }}
             >
               <img
-                src="http://localhost:9000/images/search_icon.png"
+                src={`${dest_img}/images/search_icon.png`}
                 alt="search"
                 style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                 onError={(e) => {
@@ -454,7 +489,7 @@ const HomePage: React.FC = () => {
                         href="/cart"
                       >
                         <img
-                          src="http://localhost:9000/images/cart_icon.png"
+                          src={`${dest_img}/images/cart_icon.png`}
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                           onError={(e) => {
@@ -596,7 +631,7 @@ const MaterialDetailPage: React.FC = () => {
           <div className="brand">
             <a href="/" style={{ textDecoration: 'none' }}>
               <img
-                src="http://localhost:9000/images/logo.png"
+                src={`${dest_img}/images/logo.png`}
                 alt="UltraRezina"
                 style={{
                   width: '510px',
@@ -634,7 +669,7 @@ const MaterialDetailPage: React.FC = () => {
           <div className="brand">
             <a href="/" style={{ textDecoration: 'none' }}>
               <img
-                src="http://localhost:9000/images/logo.png"
+                src={`${dest_img}/images/logo.png`}
                 alt="UltraRezina"
                 style={{
                   width: '510px',
@@ -669,7 +704,7 @@ const MaterialDetailPage: React.FC = () => {
         <div className="brand">
           <a href="/" style={{ textDecoration: 'none' }}>
             <img
-              src="http://localhost:9000/images/logo.png"
+              src={`${dest_img}/images/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -791,7 +826,7 @@ const CartPage: React.FC = () => {
         <div className="brand">
           <a href="/" style={{ textDecoration: 'none' }}>
             <img
-              src="http://localhost:9000/images/logo.png"
+              src={`${dest_img}/images/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -1017,10 +1052,10 @@ const CartPage: React.FC = () => {
 
 function App() {
   // Определяем базовый путь для GitHub Pages или локальной разработки
-  // Используем BASE_URL из Vite или определяем из текущего URL
-  let basename = import.meta.env.BASE_URL;
+  // Используем dest_root из конфигурации или определяем из текущего URL
+  let basename = dest_root;
   
-  // Если BASE_URL не установлен, определяем из текущего пути
+  // Если dest_root не установлен, определяем из текущего пути
   if (!basename || basename === '/') {
     const pathname = window.location.pathname;
     if (pathname.includes('/RIP_Frontend/')) {
@@ -1041,7 +1076,7 @@ function App() {
             <Route path="/materials/:id" element={<MaterialDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
           </Routes>
-      </div>
+        </div>
       </Router>
     </CartProvider>
   );

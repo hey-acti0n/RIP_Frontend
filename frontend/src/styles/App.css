@@ -610,6 +610,12 @@ body {
 }
 
 /* Адаптивность */
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 16px;
@@ -632,5 +638,61 @@ body {
   
   .input {
     width: 100%;
+    min-width: auto;
+  }
+  
+  .card {
+    flex-direction: column;
+  }
+  
+  .card img {
+    width: 100%;
+    height: auto;
+  }
+  
+  .actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 460px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .brand img {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+  }
+  
+  .search-bar form {
+    flex-wrap: wrap;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+  
+  .panel {
+    padding: 16px;
+  }
+  
+  .detail-grid {
+    gap: 16px;
+  }
+  
+  .detail-image {
+    max-width: 100%;
   }
 }
