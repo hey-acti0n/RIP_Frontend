@@ -92,7 +92,7 @@ const MaterialDetailPage: React.FC = () => {
     <div className="gradient-bg">
       <div className="container">
         <Breadcrumbs items={[
-          { label: 'Материалы', path: '/materials' },
+          { label: 'Материалы', href: '/materials' },
           { label: material.name }
         ]} />
         
