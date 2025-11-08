@@ -62,14 +62,22 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       const materials = await apiService.getCalculationMaterials(cartInfo.calculation_id);
       
       // Конвертируем материалы из БД в формат корзины
+      // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
+      const processImageUrl = (url: string): string => {
+        // Если уже полный URL (http/https) - оставляем как есть
+        if (url.startsWith('http')) return url;
+        // Если начинается с '/' - это локальный файл (логотип для mock данных)
+        if (url.startsWith('/')) return url;
+        // Иначе - это путь из MinIO, добавляем базовый URL
+        return `http://localhost:9000${url}`;
+      };
+
       const cartItems: CartItem[] = materials.map(item => ({
         material: {
           id: item.material.id,
           name: item.material.name,
           description: item.material.description,
-          image_url: item.material.image_url.startsWith('http') 
-            ? item.material.image_url 
-            : `http://localhost:9000${item.material.image_url}`,
+          image_url: processImageUrl(item.material.image_url),
           is_active: item.material.is_active,
           density: item.material.density,
           thickness: item.material.thickness,
@@ -316,12 +324,17 @@ const HomePage: React.FC = () => {
         });
         console.log('API response:', response);
         
+        // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
+        const processImageUrl = (url: string): string => {
+          if (url.startsWith('http')) return url;
+          if (url.startsWith('/')) return url; // Локальный файл (логотип для mock данных)
+          return `http://localhost:9000${url}`; // Путь из MinIO
+        };
+
         // Обрабатываем URL изображений для MinIO
         const materialsWithFullUrls = response.data.map((material: Material) => ({
           ...material,
-          image_url: material.image_url.startsWith('http') 
-            ? material.image_url 
-            : `http://localhost:9000${material.image_url}`,
+          image_url: processImageUrl(material.image_url),
           props: [
             `Плотность: ${material.density} кг/м³`,
             `Толщина: ${material.thickness} мм`,
@@ -356,12 +369,17 @@ const HomePage: React.FC = () => {
         ...filters
       });
       
+      // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
+      const processImageUrl = (url: string): string => {
+        if (url.startsWith('http')) return url;
+        if (url.startsWith('/')) return url; // Локальный файл (логотип для mock данных)
+        return `http://localhost:9000${url}`; // Путь из MinIO
+      };
+
       // Обрабатываем URL изображений для MinIO
       const materialsWithFullUrls = response.data.map((material: Material) => ({
         ...material,
-        image_url: material.image_url.startsWith('http') 
-          ? material.image_url 
-          : `http://localhost:9000${material.image_url}`,
+        image_url: processImageUrl(material.image_url),
         props: [
           `Плотность: ${material.density} кг/м³`,
           `Толщина: ${material.thickness} мм`,
@@ -551,12 +569,17 @@ const MaterialDetailPage: React.FC = () => {
       try {
         const materialData = await apiService.getMaterial(parseInt(id));
         
+        // Функция для обработки image_url: mock данные используют '/logo.png', реальные данные из MinIO
+        const processImageUrl = (url: string): string => {
+          if (url.startsWith('http')) return url;
+          if (url.startsWith('/')) return url; // Локальный файл (логотип для mock данных)
+          return `http://localhost:9000${url}`; // Путь из MinIO
+        };
+
         // Обрабатываем URL изображения для MinIO
         const materialWithFullUrl = {
           ...materialData,
-          image_url: materialData.image_url.startsWith('http') 
-            ? materialData.image_url 
-            : `http://localhost:9000${materialData.image_url}`,
+          image_url: processImageUrl(materialData.image_url),
           props: [
             `Плотность: ${materialData.density} кг/м³`,
             `Толщина: ${materialData.thickness} мм`,
