@@ -55,7 +55,12 @@ interface MaterialCalculationResult {
 import { filterMockMaterials, getMockMaterial, createMockPaginationResponse } from '../data/mockData';
 import { dest_api } from '../config/target_config';
 
-const API_BASE_URL = dest_api.endsWith('/api') ? '/api/v1' : `${dest_api}/v1`;
+// Формируем базовый URL для API
+// Если dest_api содержит полный URL (для Tauri), добавляем /api/v1
+// Если dest_api это путь (для dev), используем его напрямую
+const API_BASE_URL = dest_api.startsWith('http') 
+  ? `${dest_api}/api/v1` 
+  : (dest_api.endsWith('/api') ? '/api/v1' : `${dest_api}/v1`);
 const USE_MOCK_DATA = false; // Флаг для принудительного использования mock данных
 
 class ApiService {

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useDispatch } from "react-redux";
+import { invoke } from "@tauri-apps/api/core";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/App.css';
 import { apiService } from './services/api';
@@ -1027,11 +1028,27 @@ const CartPage: React.FC = () => {
 };
 
 function App() {
-  // Определяем базовый путь для GitHub Pages или локальной разработки
+  // Определяем базовый путь для GitHub Pages, локальной разработки или Tauri
   // В режиме разработки (localhost) basename должен быть "/"
   // В продакшене (GitHub Pages) basename должен быть "/RIP_Frontend"
+  // В Tauri basename должен быть "" (пустая строка)
   const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const basename = isDev ? '/' : dest_root;
+  const isTauri = typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
+  const basename = isTauri ? '' : (isDev ? '/' : dest_root);
+  
+  // Проверка Tauri согласно гайду
+  useEffect(() => {
+    if (isTauri) {
+      invoke('tauri', { cmd: 'create' })
+        .then(() => { console.log("Tauri launched") })
+        .catch(() => { console.log("Tauri not launched") });
+      return () => {
+        invoke('tauri', { cmd: 'close' })
+          .then(() => { console.log("Tauri closed") })
+          .catch(() => { console.log("Tauri not launched") });
+      };
+    }
+  }, [isTauri]);
   
   return (
     <CartProvider>
