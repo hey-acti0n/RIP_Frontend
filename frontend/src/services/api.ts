@@ -64,9 +64,13 @@ const API_BASE_URL = dest_api.startsWith('http')
 // Для GitHub Pages используем mock данные, так как бэкенд недоступен
 const USE_MOCK_DATA = !dest_api.startsWith('http'); // Используем mock если не полный URL (не Tauri)
 
+// Логирование для отладки
+console.log('API Configuration:', { dest_api, API_BASE_URL, USE_MOCK_DATA });
+
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
+    console.log('API Request:', url);
     
     try {
       const response = await fetch(url, {

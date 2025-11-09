@@ -19,7 +19,9 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "dangerousDisableAssetCspModification": false,
+      "freezePrototype": false
     },
     "withGlobalTauri": true
   },

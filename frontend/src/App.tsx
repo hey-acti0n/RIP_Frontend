@@ -87,8 +87,8 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           image_url: item.material.image_url.startsWith('http')
             ? item.material.image_url 
             : item.material.image_url.startsWith('/')
-            ? `${dest_root}${item.material.image_url}`
-            : `http://localhost:9000${item.material.image_url}`,
+            ? `${dest_img}${item.material.image_url}`
+            : `${dest_img}${item.material.image_url}`,
           is_active: item.material.is_active,
           density: item.material.density,
           thickness: item.material.thickness,
@@ -359,13 +359,13 @@ const HomePage: React.FC = () => {
         const response = await apiService.getMaterials(apiFilters);
         
         // Обрабатываем URL изображений для MinIO
-        // Если это логотип или путь начинается с '/', добавляем dest_root для GitHub Pages
+        // Если путь начинается с '/', добавляем базовый URL MinIO
         const materialsWithFullUrls = response.data.map((material: Material) => ({
           ...material,
           image_url: material.image_url.startsWith('http')
             ? material.image_url 
             : material.image_url.startsWith('/')
-            ? `${dest_root}${material.image_url}`
+            ? `${dest_img}${material.image_url}`
             : `${dest_img}${material.image_url}`,
           props: [
             `Плотность: ${material.density} кг/м³`,
@@ -406,13 +406,13 @@ const HomePage: React.FC = () => {
       const response = await apiService.getMaterials(apiFilters);
       
       // Обрабатываем URL изображений для MinIO
-      // Если путь начинается с '/', добавляем dest_root для GitHub Pages
+      // Если путь начинается с '/', добавляем базовый URL MinIO
       const materialsWithFullUrls = response.data.map((material: Material) => ({
         ...material,
         image_url: material.image_url.startsWith('http')
           ? material.image_url 
           : material.image_url.startsWith('/')
-          ? `${dest_root}${material.image_url}`
+          ? `${dest_img}${material.image_url}`
           : `${dest_img}${material.image_url}`,
         props: [
           `Плотность: ${material.density} кг/м³`,
@@ -620,14 +620,14 @@ const MaterialDetailPage: React.FC = () => {
         const materialData = await apiService.getMaterial(parseInt(id));
         
         // Обрабатываем URL изображения для MinIO
-        // Если путь начинается с '/', добавляем dest_root для GitHub Pages
+        // Если путь начинается с '/', добавляем базовый URL MinIO
         const materialWithFullUrl = {
           ...materialData,
           image_url: materialData.image_url.startsWith('http')
             ? materialData.image_url 
             : materialData.image_url.startsWith('/')
-            ? `${dest_root}${materialData.image_url}`
-            : `http://localhost:9000${materialData.image_url}`,
+            ? `${dest_img}${materialData.image_url}`
+            : `${dest_img}${materialData.image_url}`,
           props: [
             `Плотность: ${materialData.density} кг/м³`,
             `Толщина: ${materialData.thickness} мм`,
