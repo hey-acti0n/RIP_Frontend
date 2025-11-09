@@ -61,7 +61,8 @@ import { dest_api } from '../config/target_config';
 const API_BASE_URL = dest_api.startsWith('http') 
   ? `${dest_api}/api/v1` 
   : (dest_api.endsWith('/api') ? '/api/v1' : `${dest_api}/v1`);
-const USE_MOCK_DATA = false; // Флаг для принудительного использования mock данных
+// Для GitHub Pages используем mock данные, так как бэкенд недоступен
+const USE_MOCK_DATA = !dest_api.startsWith('http'); // Используем mock если не полный URL (не Tauri)
 
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {

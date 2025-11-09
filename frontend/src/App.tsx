@@ -9,7 +9,7 @@ import Breadcrumbs from './components/Breadcrumbs';
 import TopNavbar from './components/TopNavbar';
 import type { Material } from './types/api';
 import { useFilters, updateFilterAction, resetFiltersAction } from './store/slices/filtersSlice';
-import { dest_root, dest_img } from './config/target_config';
+import { dest_root, dest_img, dest_api } from './config/target_config';
 
 // Типы для компонентов
 
@@ -55,8 +55,13 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   }, []);
 
   const loadCartFromDB = async () => {
+    // Пропускаем загрузку из БД, если используется mock режим (GitHub Pages)
+    if (!dest_api.startsWith('http')) {
+      loadCartFromStorage();
+      return;
+    }
+    
     try {
-      
       // Сначала получаем информацию о корзине
       const cartInfo = await apiService.getCartInfo();
       setCalculationId(cartInfo.calculation_id);
@@ -79,8 +84,10 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           id: item.material.id,
           name: item.material.name,
           description: item.material.description,
-          image_url: item.material.image_url.startsWith('http') || item.material.image_url.startsWith('/logo') || item.material.image_url === '/logo.png'
+          image_url: item.material.image_url.startsWith('http')
             ? item.material.image_url 
+            : item.material.image_url.startsWith('/')
+            ? `${dest_root}${item.material.image_url}`
             : `http://localhost:9000${item.material.image_url}`,
           is_active: item.material.is_active,
           density: item.material.density,
@@ -129,6 +136,26 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   const addToCart = async (material: Material) => {
+    // Пропускаем добавление в БД, если используется mock режим (GitHub Pages)
+    if (!dest_api.startsWith('http')) {
+      setCart(prevCart => {
+        const existingItem = prevCart.find(item => item.material.id === material.id);
+        let newCart;
+        if (existingItem) {
+          newCart = prevCart.map(item =>
+            item.material.id === material.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
+        } else {
+          newCart = [...prevCart, { material, quantity: 1 }];
+        }
+        saveCartToStorage(newCart, calculationId, comments);
+        return newCart;
+      });
+      return;
+    }
+    
     try {
       // Добавляем в БД
       const result = await apiService.addMaterialToCart(material.id, 1);
@@ -219,8 +246,8 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const clearCart = async () => {
     try {
-      // Если есть активный расчет, удаляем его из БД
-      if (calculationId) {
+      // Если есть активный расчет, удаляем его из БД (только если не mock режим)
+      if (calculationId && dest_api.startsWith('http')) {
         try {
           await apiService.deleteCalculation(calculationId);
         } catch (error) {
@@ -240,12 +267,24 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const formCalculation = async (mass: number, frequency: number) => {
     try {
-      if (!calculationId) {
-        throw new Error('Нет активного расчета');
-      }
-      
       if (cart.length === 0) {
         throw new Error('Корзина пуста');
+      }
+      
+      // В mock режиме возвращаем заглушку
+      if (!dest_api.startsWith('http')) {
+        // Генерируем mock результаты расчета
+        return {
+          calculation_results: cart.map(item => ({
+            material_id: item.material.id,
+            result_freq: Math.random() * 50 + 10, // Случайная частота 10-60 Гц
+            result_percent: Math.random() * 30 + 70 // Случайная изоляция 70-100%
+          }))
+        };
+      }
+      
+      if (!calculationId) {
+        throw new Error('Нет активного расчета');
       }
       
       // Выполняем расчет через БД
@@ -320,11 +359,13 @@ const HomePage: React.FC = () => {
         const response = await apiService.getMaterials(apiFilters);
         
         // Обрабатываем URL изображений для MinIO
-        // Если это логотип или путь начинается с '/', не добавляем localhost:9000
+        // Если это логотип или путь начинается с '/', добавляем dest_root для GitHub Pages
         const materialsWithFullUrls = response.data.map((material: Material) => ({
           ...material,
-          image_url: material.image_url.startsWith('http') || material.image_url.startsWith('/logo') || material.image_url === '/logo.png'
+          image_url: material.image_url.startsWith('http')
             ? material.image_url 
+            : material.image_url.startsWith('/')
+            ? `${dest_root}${material.image_url}`
             : `${dest_img}${material.image_url}`,
           props: [
             `Плотность: ${material.density} кг/м³`,
@@ -365,12 +406,14 @@ const HomePage: React.FC = () => {
       const response = await apiService.getMaterials(apiFilters);
       
       // Обрабатываем URL изображений для MinIO
-      // Если это логотип, не добавляем localhost:9000
+      // Если путь начинается с '/', добавляем dest_root для GitHub Pages
       const materialsWithFullUrls = response.data.map((material: Material) => ({
         ...material,
-        image_url: material.image_url.startsWith('http') || material.image_url.startsWith('/logo') || material.image_url === '/logo.png'
+        image_url: material.image_url.startsWith('http')
           ? material.image_url 
-          : `http://localhost:9000${material.image_url}`,
+          : material.image_url.startsWith('/')
+          ? `${dest_root}${material.image_url}`
+          : `${dest_img}${material.image_url}`,
         props: [
           `Плотность: ${material.density} кг/м³`,
           `Толщина: ${material.thickness} мм`,
@@ -393,7 +436,7 @@ const HomePage: React.FC = () => {
         <div className="brand">
           <Link to="/" style={{ textDecoration: 'none' }}>
             <img
-              src={`${dest_img}/images/logo.png`}
+              src={`${dest_root}/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -403,7 +446,7 @@ const HomePage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/default-material.jpg";
+                (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
               }}
             />
           </Link>
@@ -456,7 +499,7 @@ const HomePage: React.FC = () => {
               style={{ background: 'transparent', border: 'none', padding: 0 }}
             >
               <img
-                src={`${dest_img}/images/search_icon.png`}
+                src={`${dest_root}/search_icon.png`}
                 alt="search"
                 style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                 onError={(e) => {
@@ -470,7 +513,7 @@ const HomePage: React.FC = () => {
                         to="/cart"
                       >
                         <img
-                          src={`${dest_img}/images/cart_icon.png`}
+                          src={`${dest_root}/cart_icon.png`}
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                           onError={(e) => {
@@ -577,11 +620,13 @@ const MaterialDetailPage: React.FC = () => {
         const materialData = await apiService.getMaterial(parseInt(id));
         
         // Обрабатываем URL изображения для MinIO
-        // Если это логотип, не добавляем localhost:9000
+        // Если путь начинается с '/', добавляем dest_root для GitHub Pages
         const materialWithFullUrl = {
           ...materialData,
-          image_url: materialData.image_url.startsWith('http') || materialData.image_url.startsWith('/logo') || materialData.image_url === '/logo.png'
+          image_url: materialData.image_url.startsWith('http')
             ? materialData.image_url 
+            : materialData.image_url.startsWith('/')
+            ? `${dest_root}${materialData.image_url}`
             : `http://localhost:9000${materialData.image_url}`,
           props: [
             `Плотность: ${materialData.density} кг/м³`,
@@ -609,7 +654,7 @@ const MaterialDetailPage: React.FC = () => {
           <div className="brand">
             <a href="/" style={{ textDecoration: 'none' }}>
               <img
-                src={`${dest_img}/images/logo.png`}
+                src={`${dest_root}/logo.png`}
                 alt="UltraRezina"
                 style={{
                   width: '510px',
@@ -647,7 +692,7 @@ const MaterialDetailPage: React.FC = () => {
           <div className="brand">
             <a href="/" style={{ textDecoration: 'none' }}>
               <img
-                src={`${dest_img}/images/logo.png`}
+                src={`${dest_root}/logo.png`}
                 alt="UltraRezina"
                 style={{
                   width: '510px',
@@ -682,7 +727,7 @@ const MaterialDetailPage: React.FC = () => {
         <div className="brand">
           <Link to="/" style={{ textDecoration: 'none' }}>
             <img
-              src={`${dest_img}/images/logo.png`}
+              src={`${dest_root}/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -692,7 +737,7 @@ const MaterialDetailPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/default-material.jpg";
+                (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
               }}
             />
           </Link>
@@ -803,7 +848,7 @@ const CartPage: React.FC = () => {
         <div className="brand">
           <Link to="/" style={{ textDecoration: 'none' }}>
             <img
-              src={`${dest_img}/images/logo.png`}
+              src={`${dest_root}/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -813,7 +858,7 @@ const CartPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/default-material.jpg";
+                (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
               }}
             />
           </Link>
