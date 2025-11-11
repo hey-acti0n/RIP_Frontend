@@ -118,7 +118,7 @@ class ApiService {
         // Используем логотип для всех mock материалов
         const mockDataWithLogo = filtered.map(material => ({
           ...material,
-          image_url: '/logo.png'
+          image_url: `${import.meta.env.BASE_URL}logo.png`
         }));
         
         return createMockPaginationResponse(
@@ -159,7 +159,7 @@ class ApiService {
       // Используем логотип для всех mock материалов
       const mockDataWithLogo = filtered.map(material => ({
         ...material,
-        image_url: '/logo.png'
+        image_url: `${import.meta.env.BASE_URL}logo.png`
       }));
       
       return createMockPaginationResponse(
@@ -180,7 +180,7 @@ class ApiService {
         if (mockMaterial) {
           return {
             ...mockMaterial,
-            image_url: '/logo.png' // Используем логотип для mock материала
+            image_url: `${import.meta.env.BASE_URL}logo.png` // Используем логотип для mock материала
           };
         }
         throw new Error('Material not found');
@@ -195,7 +195,7 @@ class ApiService {
       if (mockMaterial) {
         return {
           ...mockMaterial,
-          image_url: '/logo.png' // Используем логотип для mock материала
+          image_url: `${import.meta.env.BASE_URL}logo.png` // Используем логотип для mock материала
         };
       }
       throw error;

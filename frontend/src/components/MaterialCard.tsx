@@ -13,7 +13,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   onViewDetails, 
   onAddToCart 
 }) => {
-  const defaultImage = '/default-material.jpg';
+  const defaultImage = `${import.meta.env.BASE_URL}logo.png`;
   
   const formatProps = () => {
     const props = [];

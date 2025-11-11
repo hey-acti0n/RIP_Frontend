@@ -7,6 +7,9 @@ import Breadcrumbs from './components/Breadcrumbs';
 import TopNavbar from './components/TopNavbar';
 import type { Material } from './types/api';
 
+// Константа для пути к логотипу с учетом base path
+const LOGO_PATH = `${import.meta.env.BASE_URL}logo.png`;
+
 // Типы для компонентов
 
 interface CartItem {
@@ -77,9 +80,11 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           id: item.material.id,
           name: item.material.name,
           description: item.material.description,
-          image_url: item.material.image_url.startsWith('http') || item.material.image_url.startsWith('/logo') || item.material.image_url === '/logo.png'
-            ? item.material.image_url 
-            : `http://localhost:9000${item.material.image_url}`,
+          image_url: !item.material.image_url || item.material.image_url.trim() === ''
+            ? LOGO_PATH
+            : item.material.image_url.startsWith('http') || item.material.image_url.includes('logo.png')
+              ? item.material.image_url 
+              : `http://localhost:9000${item.material.image_url}`,
           is_active: item.material.is_active,
           density: item.material.density,
           thickness: item.material.thickness,
@@ -330,9 +335,11 @@ const HomePage: React.FC = () => {
         // Если это логотип или путь начинается с '/', не добавляем localhost:9000
         const materialsWithFullUrls = response.data.map((material: Material) => ({
           ...material,
-          image_url: material.image_url.startsWith('http') || material.image_url.startsWith('/logo') || material.image_url === '/logo.png'
-            ? material.image_url 
-            : `http://localhost:9000${material.image_url}`,
+          image_url: !material.image_url || material.image_url.trim() === ''
+            ? LOGO_PATH
+            : material.image_url.startsWith('http') || material.image_url.includes('logo.png')
+              ? material.image_url 
+              : `http://localhost:9000${material.image_url}`,
           props: [
             `Плотность: ${material.density} кг/м³`,
             `Толщина: ${material.thickness} мм`,
@@ -371,9 +378,11 @@ const HomePage: React.FC = () => {
       // Если это логотип, не добавляем localhost:9000
       const materialsWithFullUrls = response.data.map((material: Material) => ({
         ...material,
-        image_url: material.image_url.startsWith('http') || material.image_url.startsWith('/logo') || material.image_url === '/logo.png'
-          ? material.image_url 
-          : `http://localhost:9000${material.image_url}`,
+        image_url: !material.image_url || material.image_url.trim() === ''
+          ? LOGO_PATH
+          : material.image_url.startsWith('http') || material.image_url.includes('logo.png')
+            ? material.image_url 
+            : `http://localhost:9000${material.image_url}`,
         props: [
           `Плотность: ${material.density} кг/м³`,
           `Толщина: ${material.thickness} мм`,
@@ -444,7 +453,8 @@ const HomePage: React.FC = () => {
                 alt="search"
                 style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  const target = e.target as HTMLImageElement;
+                  target.src = LOGO_PATH;
                 }}
               />
             </button>
@@ -488,7 +498,7 @@ const HomePage: React.FC = () => {
                 </div>
                 <div style={{ marginBottom: '15px', textAlign: 'center' }}>
                   <img 
-                    src={material.image_url} 
+                    src={material.image_url || LOGO_PATH} 
                     alt={material.name}
                     style={{
                       width: '100%',
@@ -498,7 +508,8 @@ const HomePage: React.FC = () => {
                       border: '1px solid #e0e0e0'
                     }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
+                      const target = e.target as HTMLImageElement;
+                      target.src = LOGO_PATH;
                     }}
                   />
                 </div>
@@ -567,9 +578,11 @@ const MaterialDetailPage: React.FC = () => {
         // Если это логотип, не добавляем localhost:9000
         const materialWithFullUrl = {
           ...materialData,
-          image_url: materialData.image_url.startsWith('http') || materialData.image_url.startsWith('/logo') || materialData.image_url === '/logo.png'
-            ? materialData.image_url 
-            : `http://localhost:9000${materialData.image_url}`,
+          image_url: !materialData.image_url || materialData.image_url.trim() === ''
+            ? LOGO_PATH
+            : materialData.image_url.startsWith('http') || materialData.image_url.includes('logo.png')
+              ? materialData.image_url 
+              : `http://localhost:9000${materialData.image_url}`,
           props: [
             `Плотность: ${materialData.density} кг/м³`,
             `Толщина: ${materialData.thickness} мм`,
@@ -606,7 +619,8 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  const target = e.target as HTMLImageElement;
+                  target.src = LOGO_PATH;
                 }}
               />
             </a>
@@ -644,7 +658,8 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  const target = e.target as HTMLImageElement;
+                  target.src = LOGO_PATH;
                 }}
               />
             </a>
@@ -714,10 +729,11 @@ const MaterialDetailPage: React.FC = () => {
               <p>{material.description}</p>
               <img
                 className="detail-image"
-                src={material.image_url}
+                src={material.image_url || LOGO_PATH}
                 alt={material.name}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  const target = e.target as HTMLImageElement;
+                  target.src = LOGO_PATH;
                 }}
               />
             </div>
@@ -873,7 +889,7 @@ const CartPage: React.FC = () => {
                       {/* Изображение товара */}
                       <div style={{ flexShrink: 0 }}>
                         <img 
-                          src={item.material.image_url} 
+                          src={item.material.image_url || LOGO_PATH} 
                           alt={item.material.name}
                           style={{
                             width: '120px',
@@ -883,7 +899,8 @@ const CartPage: React.FC = () => {
                             border: '1px solid #3a3d41',
                           }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
+                            const target = e.target as HTMLImageElement;
+                            target.src = LOGO_PATH;
                           }}
                         />
                       </div>
