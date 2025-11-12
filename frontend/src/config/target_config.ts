@@ -1,15 +1,15 @@
 // Конфигурация для переключения между обычным режимом и Tauri
 // Установите target_tauri в true для сборки Tauri приложения
 // Для GitHub Pages установите false перед деплоем
-const target_tauri = false
+const target_tauri = true
 
 // Использовать HTTPS (true) или HTTP (false)
 // Для разработки обычно используется HTTP, для production - HTTPS
 const use_https = false
 
 // IP адрес сервера в локальной сети (замените на ваш IP)
-const api_host = "192.168.1.227"
-const img_host = "192.168.1.227"
+const api_host = "192.168.1.225"
+const img_host = "192.168.1.225"
 
 // Порт для API и MinIO
 const api_port = 8080

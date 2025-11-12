@@ -360,7 +360,9 @@ const HomePage: React.FC = () => {
         
         // Обрабатываем URL изображений для MinIO
         // Если путь начинается с '/', добавляем базовый URL MinIO
-        const materialsWithFullUrls = response.data.map((material: Material) => ({
+        // Проверяем, что data не null и является массивом
+        const materialsData = response.data || [];
+        const materialsWithFullUrls = materialsData.map((material: Material) => ({
           ...material,
           image_url: material.image_url.startsWith('http')
             ? material.image_url 
@@ -407,7 +409,9 @@ const HomePage: React.FC = () => {
       
       // Обрабатываем URL изображений для MinIO
       // Если путь начинается с '/', добавляем базовый URL MinIO
-      const materialsWithFullUrls = response.data.map((material: Material) => ({
+      // Проверяем, что data не null и является массивом
+      const materialsData = response.data || [];
+      const materialsWithFullUrls = materialsData.map((material: Material) => ({
         ...material,
         image_url: material.image_url.startsWith('http')
           ? material.image_url 
@@ -1073,11 +1077,27 @@ const CartPage: React.FC = () => {
 };
 
 function App() {
-  // Определяем базовый путь для GitHub Pages или локальной разработки
+  // Определяем базовый путь для GitHub Pages, локальной разработки или Tauri
   // В режиме разработки (localhost) basename должен быть "/"
   // В продакшене (GitHub Pages) basename должен быть "/RIP_Frontend"
+  // В Tauri basename должен быть "" (пустая строка)
   const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const basename = isDev ? '/' : dest_root;
+  const isTauri = typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
+  const basename = isTauri ? '' : (isDev ? '/' : dest_root);
+  
+  // Проверка Tauri согласно гайду
+  useEffect(() => {
+    if (isTauri) {
+      invoke('tauri', { cmd: 'create' })
+        .then(() => { console.log("Tauri launched") })
+        .catch(() => { console.log("Tauri not launched") });
+      return () => {
+        invoke('tauri', { cmd: 'close' })
+          .then(() => { console.log("Tauri closed") })
+          .catch(() => { console.log("Tauri not launched") });
+      };
+    }
+  }, [isTauri]);
   
   return (
     <CartProvider>
