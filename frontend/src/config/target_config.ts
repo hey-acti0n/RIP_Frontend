@@ -1,7 +1,7 @@
 // Конфигурация для переключения между обычным режимом и Tauri
 // Установите target_tauri в true для сборки Tauri приложения
 // Для GitHub Pages установите false перед деплоем
-const target_tauri = true
+const target_tauri = false
 
 // Использовать HTTPS (true) или HTTP (false)
 // Для разработки обычно используется HTTP, для production - HTTPS
