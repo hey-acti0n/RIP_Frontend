@@ -5,7 +5,7 @@ const target_tauri = false
 
 // Использовать HTTPS (true) или HTTP (false)
 // Для разработки обычно используется HTTP, для production - HTTPS
-const use_https = false
+const use_https = true
 
 // IP адрес сервера в локальной сети (замените на ваш IP)
 const api_host = "192.168.1.227"
