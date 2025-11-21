@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+frontend.log
 
 node_modules
 dist
@@ -25,3 +26,16 @@ dist-ssr
 
 # Rust/Tauri build artifacts
 src-tauri/target/
+src-tauri/target/**/*
+*.app
+*.dmg
+*.app.dSYM
+
+# Tauri generated files
+src-tauri/gen/
+
+# Build outputs
+dist/
+dist-ssr/
+dev-dist/
+build/
