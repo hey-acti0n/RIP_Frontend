@@ -68,18 +68,87 @@ const USE_MOCK_DATA = !dest_api.startsWith('http'); // Используем mock
 console.log('API Configuration:', { dest_api, API_BASE_URL, USE_MOCK_DATA });
 
 class ApiService {
+  // Кэш для определения протокола (HTTPS или HTTP)
+  private protocolCache: 'https' | 'http' | null = null;
+
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    // Для Tauri: автоматически определяем протокол
+    let baseUrl = API_BASE_URL;
+    
+    // Если это Tauri (полный URL) и протокол еще не определен
+    if (dest_api.startsWith('http') && this.protocolCache === null) {
+      // Пробуем сначала HTTP (так как HTTPS с самоподписанным сертификатом вызывает проблемы)
+      try {
+        const testUrl = `${baseUrl}/materials?limit=1`;
+        const testResponse = await fetch(testUrl, { 
+          method: 'GET',
+          signal: AbortSignal.timeout(3000)
+        });
+        if (testResponse.ok) {
+          this.protocolCache = 'http';
+          console.log('✓ Using HTTP for API');
+        } else {
+          // Если HTTP не работает, пробуем HTTPS
+          const httpsBaseUrl = baseUrl.replace('http://', 'https://');
+          try {
+            const httpsTestUrl = `${httpsBaseUrl}/materials?limit=1`;
+            const httpsTestResponse = await fetch(httpsTestUrl, { 
+              method: 'GET',
+              signal: AbortSignal.timeout(3000)
+            });
+            if (httpsTestResponse.ok) {
+              this.protocolCache = 'https';
+              baseUrl = httpsBaseUrl;
+              console.log('✓ Using HTTPS for API');
+            } else {
+              this.protocolCache = 'http';
+              console.log('✓ Using HTTP for API (HTTPS returned error)');
+            }
+          } catch (httpsError) {
+            this.protocolCache = 'http';
+            console.log('✓ Using HTTP for API (HTTPS certificate error)');
+          }
+        }
+      } catch (error) {
+        // HTTP не работает, пробуем HTTPS
+        const httpsBaseUrl = baseUrl.replace('http://', 'https://');
+        try {
+          const httpsTestUrl = `${httpsBaseUrl}/materials?limit=1`;
+          const httpsTestResponse = await fetch(httpsTestUrl, { 
+            method: 'GET',
+            signal: AbortSignal.timeout(3000)
+          });
+          if (httpsTestResponse.ok) {
+            this.protocolCache = 'https';
+            baseUrl = httpsBaseUrl;
+            console.log('✓ Using HTTPS for API');
+          } else {
+            this.protocolCache = 'http';
+            console.log('✓ Using HTTP for API (fallback)');
+          }
+        } catch (httpsError) {
+          this.protocolCache = 'http';
+          console.log('✓ Using HTTP for API (HTTPS certificate error)');
+        }
+      }
+    } else if (this.protocolCache === 'https' && baseUrl.startsWith('http://')) {
+      // Если уже определили HTTPS, используем его
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
+    
+    const url = `${baseUrl}${endpoint}`;
     console.log('API Request:', url);
     
     try {
-      const response = await fetch(url, {
+      const fetchOptions: RequestInit = {
         headers: {
           'Content-Type': 'application/json',
           ...options?.headers,
         },
         ...options,
-      });
+      };
+      
+      const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -87,6 +156,29 @@ class ApiService {
 
       return await response.json();
     } catch (error) {
+      // Если ошибка и это был HTTPS, пробуем HTTP один раз
+      if (url.startsWith('https://') && this.protocolCache !== 'http') {
+        console.log('HTTPS failed (certificate error), retrying with HTTP');
+        this.protocolCache = 'http';
+        const httpUrl = url.replace('https://', 'http://');
+        const fetchOptions: RequestInit = {
+          headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+          ...options,
+        };
+        try {
+          const response = await fetch(httpUrl, fetchOptions);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return await response.json();
+        } catch (httpError) {
+          console.error('HTTP also failed:', httpError);
+          throw httpError;
+        }
+      }
       console.error('API request failed:', error);
       throw error;
     }

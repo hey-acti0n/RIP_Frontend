@@ -78,7 +78,7 @@ const MaterialDetailPage: React.FC = () => {
     );
   }
 
-  const defaultImage = '/default-material.jpg';
+  const defaultImage = '/logo.png';
   const formatProps = () => {
     const props = [];
     if (material.density) props.push(`Плотность: ${material.density} г/см³`);

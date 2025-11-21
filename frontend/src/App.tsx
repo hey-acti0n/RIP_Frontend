@@ -84,11 +84,13 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           id: item.material.id,
           name: item.material.name,
           description: item.material.description,
-          image_url: item.material.image_url.startsWith('http')
+          image_url: !item.material.image_url || item.material.image_url.trim() === ''
+            ? `${dest_root}/logo.png`
+            : item.material.image_url.startsWith('http')
             ? item.material.image_url 
             : item.material.image_url.startsWith('/')
             ? `${dest_img}${item.material.image_url}`
-            : `${dest_img}${item.material.image_url}`,
+            : `${dest_img}/${item.material.image_url}`,
           is_active: item.material.is_active,
           density: item.material.density,
           thickness: item.material.thickness,
@@ -364,11 +366,13 @@ const HomePage: React.FC = () => {
         const materialsData = response.data || [];
         const materialsWithFullUrls = materialsData.map((material: Material) => ({
           ...material,
-          image_url: material.image_url.startsWith('http')
+          image_url: !material.image_url || material.image_url.trim() === ''
+            ? `${dest_root}/logo.png`
+            : material.image_url.startsWith('http')
             ? material.image_url 
             : material.image_url.startsWith('/')
             ? `${dest_img}${material.image_url}`
-            : `${dest_img}${material.image_url}`,
+            : `${dest_img}/${material.image_url}`,
           props: [
             `Плотность: ${material.density} кг/м³`,
             `Толщина: ${material.thickness} мм`,
@@ -507,7 +511,7 @@ const HomePage: React.FC = () => {
                 alt="search"
                 style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
                 }}
               />
             </button>
@@ -521,7 +525,7 @@ const HomePage: React.FC = () => {
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/default-material.jpg";
+                            (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
                           }}
                         />
                       </Link>
@@ -550,7 +554,7 @@ const HomePage: React.FC = () => {
                 </div>
                 <div style={{ marginBottom: '15px', textAlign: 'center' }}>
                   <img 
-                    src={material.image_url} 
+                    src={material.image_url || `${dest_root}/logo.png`} 
                     alt={material.name}
                     style={{
                       width: '100%',
@@ -627,11 +631,13 @@ const MaterialDetailPage: React.FC = () => {
         // Если путь начинается с '/', добавляем базовый URL MinIO
         const materialWithFullUrl = {
           ...materialData,
-          image_url: materialData.image_url.startsWith('http')
+          image_url: !materialData.image_url || materialData.image_url.trim() === ''
+            ? `${dest_root}/logo.png`
+            : materialData.image_url.startsWith('http')
             ? materialData.image_url 
             : materialData.image_url.startsWith('/')
             ? `${dest_img}${materialData.image_url}`
-            : `${dest_img}${materialData.image_url}`,
+            : `${dest_img}/${materialData.image_url}`,
           props: [
             `Плотность: ${materialData.density} кг/м³`,
             `Толщина: ${materialData.thickness} мм`,
@@ -668,7 +674,7 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
                 }}
               />
             </a>
@@ -706,7 +712,7 @@ const MaterialDetailPage: React.FC = () => {
                   background: '#ffffff00'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
                 }}
               />
             </a>
@@ -779,7 +785,7 @@ const MaterialDetailPage: React.FC = () => {
                 src={material.image_url}
                 alt={material.name}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
+                  (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
                 }}
               />
             </div>
@@ -944,7 +950,8 @@ const CartPage: React.FC = () => {
                             border: '1px solid #3a3d41',
                           }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
+                            const target = e.target as HTMLImageElement;
+                            target.src = `${dest_root}/logo.png`;
                           }}
                         />
                       </div>
