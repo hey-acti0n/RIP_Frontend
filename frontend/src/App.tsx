@@ -516,21 +516,6 @@ const HomePage: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div className="actions" style={{ flex: 1 }}>
                             <a className="btn" href={`/materials/${material.id}`}>Подробнее</a>
-                            <button 
-                              className="btn primary" 
-                              type="button"
-                              onClick={async () => {
-                                console.log('Add to cart button clicked for material:', material);
-                                try {
-                                  await addToCart(material);
-                                  console.log('Material added to cart successfully');
-                                } catch (error) {
-                                  console.error('Error adding to cart:', error);
-                                }
-                              }}
-                            >
-                              Добавить
-                            </button>
                           </div>
                   <div className="muted" style={{ fontSize: '11px', lineHeight: 1.3, marginLeft: '15px', maxWidth: '200px', textAlign: 'right' }}>
                     {material.props ? material.props.slice(0, 3).map((prop: string, index: number) => (

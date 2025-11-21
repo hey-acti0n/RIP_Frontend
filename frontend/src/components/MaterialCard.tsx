@@ -5,13 +5,11 @@ import './MaterialCard.css';
 interface MaterialCardProps {
   material: Material;
   onViewDetails: (id: number) => void;
-  onAddToCart: (id: number) => void;
 }
 
 const MaterialCard: React.FC<MaterialCardProps> = ({ 
   material, 
-  onViewDetails, 
-  onAddToCart 
+  onViewDetails
 }) => {
   const defaultImage = `${import.meta.env.BASE_URL}logo.png`;
   
@@ -48,12 +46,6 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
             onClick={() => onViewDetails(material.id)}
           >
             Подробнее
-          </button>
-          <button 
-            className="btn primary" 
-            onClick={() => onAddToCart(material.id)}
-          >
-            Добавить
           </button>
         </div>
         <div className="material-props">
