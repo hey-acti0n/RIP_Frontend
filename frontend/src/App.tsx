@@ -8,7 +8,7 @@ import Breadcrumbs from './components/Breadcrumbs';
 import TopNavbar from './components/TopNavbar';
 import type { Material } from './types/api';
 import { useFilters, updateFilterAction, resetFiltersAction } from './store/slices/filtersSlice';
-import { dest_root, dest_img, dest_api } from './config/target_config';
+import { getDestRoot, dest_img, dest_api } from './config/target_config';
 
 // Типы для компонентов
 
@@ -83,11 +83,13 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           id: item.material.id,
           name: item.material.name,
           description: item.material.description,
-          image_url: item.material.image_url.startsWith('http')
+          image_url: !item.material.image_url || item.material.image_url.trim() === ''
+            ? `${getDestRoot()}/logo.png`
+            : item.material.image_url.startsWith('http')
             ? item.material.image_url 
             : item.material.image_url.startsWith('/')
             ? `${dest_img}${item.material.image_url}`
-            : `${dest_img}${item.material.image_url}`,
+            : `${dest_img}/${item.material.image_url}`,
           is_active: item.material.is_active,
           density: item.material.density,
           thickness: item.material.thickness,
@@ -361,11 +363,13 @@ const HomePage: React.FC = () => {
         // Если путь начинается с '/', добавляем базовый URL MinIO
         const materialsWithFullUrls = response.data.map((material: Material) => ({
           ...material,
-          image_url: material.image_url.startsWith('http')
+          image_url: !material.image_url || material.image_url.trim() === ''
+            ? `${getDestRoot()}/logo.png`
+            : material.image_url.startsWith('http')
             ? material.image_url 
             : material.image_url.startsWith('/')
             ? `${dest_img}${material.image_url}`
-            : `${dest_img}${material.image_url}`,
+            : `${dest_img}/${material.image_url}`,
           props: [
             `Плотность: ${material.density} кг/м³`,
             `Толщина: ${material.thickness} мм`,
@@ -435,7 +439,7 @@ const HomePage: React.FC = () => {
         <div className="brand">
           <Link to="/" style={{ textDecoration: 'none' }}>
             <img
-              src={`${dest_root}/logo.png`}
+              src={`${getDestRoot()}/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -498,12 +502,12 @@ const HomePage: React.FC = () => {
               style={{ background: 'transparent', border: 'none', padding: 0 }}
             >
               <img
-                src={`${dest_root}/search_icon.png`}
+                src={`${getDestRoot()}/search_icon.png`}
                 alt="search"
                 style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
-                }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
+                  }}
               />
             </button>
                     <div className="cart-container">
@@ -512,12 +516,12 @@ const HomePage: React.FC = () => {
                         to="/cart"
                       >
                         <img
-                          src={`${dest_root}/cart_icon.png`}
+                          src={`${getDestRoot()}/cart_icon.png`}
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/default-material.jpg";
-                          }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
+                  }}
                         />
                       </Link>
                       <span className="cart-badge">{getTotalItems()}</span>
@@ -545,7 +549,7 @@ const HomePage: React.FC = () => {
                 </div>
                 <div style={{ marginBottom: '15px', textAlign: 'center' }}>
                   <img 
-                    src={material.image_url} 
+                    src={material.image_url || `${getDestRoot()}/logo.png`} 
                     alt={material.name}
                     style={{
                       width: '100%',
@@ -555,7 +559,8 @@ const HomePage: React.FC = () => {
                       border: '1px solid #e0e0e0'
                     }}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
+                      const target = e.target as HTMLImageElement;
+                      target.src = `${getDestRoot()}/logo.png`;
                     }}
                   />
                 </div>
@@ -622,11 +627,13 @@ const MaterialDetailPage: React.FC = () => {
         // Если путь начинается с '/', добавляем базовый URL MinIO
         const materialWithFullUrl = {
           ...materialData,
-          image_url: materialData.image_url.startsWith('http')
+          image_url: !materialData.image_url || materialData.image_url.trim() === ''
+            ? `${getDestRoot()}/logo.png`
+            : materialData.image_url.startsWith('http')
             ? materialData.image_url 
             : materialData.image_url.startsWith('/')
             ? `${dest_img}${materialData.image_url}`
-            : `${dest_img}${materialData.image_url}`,
+            : `${dest_img}/${materialData.image_url}`,
           props: [
             `Плотность: ${materialData.density} кг/м³`,
             `Толщина: ${materialData.thickness} мм`,
@@ -653,7 +660,7 @@ const MaterialDetailPage: React.FC = () => {
           <div className="brand">
             <a href="/" style={{ textDecoration: 'none' }}>
               <img
-                src={`${dest_root}/logo.png`}
+                src={`${getDestRoot()}/logo.png`}
                 alt="UltraRezina"
                 style={{
                   width: '510px',
@@ -662,9 +669,9 @@ const MaterialDetailPage: React.FC = () => {
                   objectFit: 'contain',
                   background: '#ffffff00'
                 }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
-                }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
+                  }}
               />
             </a>
           </div>
@@ -691,7 +698,7 @@ const MaterialDetailPage: React.FC = () => {
           <div className="brand">
             <a href="/" style={{ textDecoration: 'none' }}>
               <img
-                src={`${dest_root}/logo.png`}
+                src={`${getDestRoot()}/logo.png`}
                 alt="UltraRezina"
                 style={{
                   width: '510px',
@@ -700,9 +707,9 @@ const MaterialDetailPage: React.FC = () => {
                   objectFit: 'contain',
                   background: '#ffffff00'
                 }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
-                }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
+                  }}
               />
             </a>
           </div>
@@ -726,7 +733,7 @@ const MaterialDetailPage: React.FC = () => {
         <div className="brand">
           <Link to="/" style={{ textDecoration: 'none' }}>
             <img
-              src={`${dest_root}/logo.png`}
+              src={`${getDestRoot()}/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -773,9 +780,9 @@ const MaterialDetailPage: React.FC = () => {
                 className="detail-image"
                 src={material.image_url}
                 alt={material.name}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/default-material.jpg";
-                }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
+                  }}
               />
             </div>
           </div>
@@ -847,7 +854,7 @@ const CartPage: React.FC = () => {
         <div className="brand">
           <Link to="/" style={{ textDecoration: 'none' }}>
             <img
-              src={`${dest_root}/logo.png`}
+              src={`${getDestRoot()}/logo.png`}
               alt="UltraRezina"
               style={{
                 width: '510px',
@@ -929,7 +936,7 @@ const CartPage: React.FC = () => {
                       {/* Изображение товара */}
                       <div style={{ flexShrink: 0 }}>
                         <img 
-                          src={item.material.image_url} 
+                          src={item.material.image_url || `${getDestRoot()}/logo.png`} 
                           alt={item.material.name}
                           style={{
                             width: '120px',
@@ -1076,7 +1083,7 @@ function App() {
   // В режиме разработки (localhost) basename должен быть "/"
   // В продакшене (GitHub Pages) basename должен быть "/RIP_Frontend"
   const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const basename = isDev ? '/' : dest_root;
+  const basename = isDev ? '/' : getDestRoot();
   
   return (
     <CartProvider>

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { Material } from '../types/api';
 import { apiService } from '../services/api';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { getDestRoot } from '../config/target_config';
 import './MaterialDetailPage.css';
 
 const MaterialDetailPage: React.FC = () => {
@@ -78,7 +79,7 @@ const MaterialDetailPage: React.FC = () => {
     );
   }
 
-  const defaultImage = '/default-material.jpg';
+  const defaultImage = `${getDestRoot()}/logo.png`;
   const formatProps = () => {
     const props = [];
     if (material.density) props.push(`Плотность: ${material.density} г/см³`);

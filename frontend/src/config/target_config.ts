@@ -20,10 +20,20 @@ const protocol = use_https ? "https" : "http"
 export const api_proxy_addr = `${protocol}://${api_host}:${api_port}`
 export const img_proxy_addr = `${protocol}://${img_host}:${img_port}`
 
+// Функция для определения режима разработки
+const isDev = () => {
+  if (typeof window === 'undefined') return false;
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+};
+
 // Адреса для API запросов
 export const dest_api = (target_tauri) ? api_proxy_addr : "/api"
 export const dest_img = (target_tauri) ? img_proxy_addr : "http://localhost:9000"
-export const dest_root = (target_tauri) ? "" : "/RIP_Frontend"
+// Функция для получения базового пути (вызывается динамически)
+export const getDestRoot = () => {
+  if (target_tauri) return "";
+  return isDev() ? "" : "/RIP_Frontend";
+}
 
 // Для обратной совместимости, если путь начинается с /images/, добавляем базовый URL
 export const getImageUrl = (imagePath: string): string => {

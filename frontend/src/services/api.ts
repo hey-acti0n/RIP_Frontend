@@ -61,11 +61,14 @@ import { dest_api } from '../config/target_config';
 const API_BASE_URL = dest_api.startsWith('http') 
   ? `${dest_api}/api/v1` 
   : (dest_api.endsWith('/api') ? '/api/v1' : `${dest_api}/v1`);
-// Для GitHub Pages используем mock данные, так как бэкенд недоступен
-const USE_MOCK_DATA = !dest_api.startsWith('http'); // Используем mock если не полный URL (не Tauri)
+
+// Определяем, нужно ли использовать mock данные (только для GitHub Pages)
+// В режиме разработки всегда пытаемся использовать реальный API
+const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const USE_MOCK_DATA = !isDev && !dest_api.startsWith('http'); // Используем mock только для GitHub Pages
 
 // Логирование для отладки
-console.log('API Configuration:', { dest_api, API_BASE_URL, USE_MOCK_DATA });
+console.log('API Configuration:', { dest_api, API_BASE_URL, USE_MOCK_DATA, isDev });
 
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -113,31 +116,31 @@ class ApiService {
 
   // Получение списка материалов с фильтрацией
   async getMaterials(filters: MaterialFilters = {}): Promise<PaginationResponse<Material>> {
-    try {
-      // Принудительное использование mock данных
-      if (USE_MOCK_DATA) {
-        const filtered = filterMockMaterials({
-          name: filters.name,
-          material: filters.material,
-          thickness_min: filters.thickness_min,
-          thickness_max: filters.thickness_max,
-          density_min: filters.density_min,
-          density_max: filters.density_max
-        });
-        
-        // Используем логотип для всех mock материалов
-        const mockDataWithLogo = filtered.map(material => ({
-          ...material,
-          image_url: '/logo.png'
-        }));
-        
-        return createMockPaginationResponse(
-          mockDataWithLogo,
-          filters.page || 1,
-          filters.limit || 10
-        );
-      }
+    // Используем mock данные только для GitHub Pages
+    if (USE_MOCK_DATA) {
+      const filtered = filterMockMaterials({
+        name: filters.name,
+        material: filters.material,
+        thickness_min: filters.thickness_min,
+        thickness_max: filters.thickness_max,
+        density_min: filters.density_min,
+        density_max: filters.density_max
+      });
+      
+      // Используем логотип для всех mock материалов
+      const mockDataWithLogo = filtered.map(material => ({
+        ...material,
+        image_url: '/logo.png'
+      }));
+      
+      return createMockPaginationResponse(
+        mockDataWithLogo,
+        filters.page || 1,
+        filters.limit || 10
+      );
+    }
 
+    try {
       const queryParams = new URLSearchParams();
       
       if (filters.name) queryParams.append('name', filters.name);
@@ -182,19 +185,19 @@ class ApiService {
 
   // Получение одного материала по ID
   async getMaterial(id: number): Promise<Material> {
-    try {
-      // Принудительное использование mock данных
-      if (USE_MOCK_DATA) {
-        const mockMaterial = getMockMaterial(id);
-        if (mockMaterial) {
-          return {
-            ...mockMaterial,
-            image_url: '/logo.png' // Используем логотип для mock материала
-          };
-        }
-        throw new Error('Material not found');
+    // Используем mock данные только для GitHub Pages
+    if (USE_MOCK_DATA) {
+      const mockMaterial = getMockMaterial(id);
+      if (mockMaterial) {
+        return {
+          ...mockMaterial,
+          image_url: '/logo.png' // Используем логотип для mock материала
+        };
       }
+      throw new Error('Material not found');
+    }
 
+    try {
       return await this.request<Material>(`/materials/${id}`);
     } catch (error) {
       console.error('API request failed, falling back to mock data:', error);
