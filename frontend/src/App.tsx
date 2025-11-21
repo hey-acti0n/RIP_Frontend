@@ -1033,23 +1033,9 @@ const CartPage: React.FC = () => {
 };
 
 function App() {
-  // Определяем базовый путь для GitHub Pages или локальной разработки
-  // Используем BASE_URL из Vite или определяем из текущего URL
-  let basename = import.meta.env.BASE_URL;
-  
-  // Если BASE_URL не установлен, определяем из текущего пути
-  if (!basename || basename === '/') {
-    const pathname = window.location.pathname;
-    if (pathname.includes('/RIP_Frontend/')) {
-      basename = '/RIP_Frontend';
-    } else {
-      basename = '/';
-    }
-  }
-  
   return (
     <CartProvider>
-      <Router basename={basename}>
+      <Router basename="/">
         <div className="App">
           <TopNavbar />
           <Routes>

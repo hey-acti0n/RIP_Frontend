@@ -42,8 +42,6 @@ export default defineConfig({
       },
     },
   },
-  // Для локальной разработки используем корневой путь
-  // Для продакшена (GitHub Pages) измените на '/RIP_Frontend/'
   base: '/'
 })
 
