@@ -347,8 +347,19 @@ const calculationsSlice = createSlice({
       })
       // Form Calculation
       .addCase(formCalculation.fulfilled, (state, action) => {
+        // Обновляем статус текущей заявки на "completed"
         if (state.currentCalculation) {
-          state.currentCalculation.status = action.payload.status;
+          state.currentCalculation.status = action.payload.status || 'completed';
+        }
+        // Обновляем статус в списке заявок
+        const calculationIndex = state.calculations.findIndex(calc => calc.id === action.payload.calculation_id);
+        if (calculationIndex !== -1) {
+          state.calculations[calculationIndex].status = action.payload.status || 'completed';
+        }
+        // Очищаем корзину, так как заявка больше не черновик
+        if (state.cartInfo.calculation_id === action.payload.calculation_id) {
+          state.cartInfo.calculation_id = null;
+          state.cartInfo.item_count = 0;
         }
       })
       // Delete Calculation

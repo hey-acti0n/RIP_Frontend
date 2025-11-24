@@ -8,7 +8,15 @@ import Breadcrumbs from './components/Breadcrumbs';
 import TopNavbar from './components/TopNavbar';
 import type { Material } from './types/api';
 import { useFilters, updateFilterAction, resetFiltersAction } from './store/slices/filtersSlice';
-import type { AppDispatch } from './store/types';
+import type { AppDispatch, RootState } from './store/types';
+import { 
+  addMaterialToCalculation, 
+  getCartInfo, 
+  formCalculation as formCalculationAction, 
+  deleteCalculation,
+  removeMaterialFromCalculation,
+  updateMaterialInCalculation
+} from './store/slices/calculationsSlice';
 import { getDestRoot, dest_img, dest_api } from './config/target_config';
 
 // Типы для компонентов
@@ -45,29 +53,81 @@ const CartContext = React.createContext<{
 
 // Провайдер корзины с интеграцией БД
 const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated } = useSelector((state: RootState) => state.user);
+  const { cartInfo } = useSelector((state: RootState) => state.calculations);
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const [calculationId, setCalculationId] = React.useState<number | null>(null);
   const [comments, setComments] = React.useState<Record<number, string>>({});
 
-  // Загружаем корзину из БД при инициализации
+  // Загружаем корзину из БД при инициализации только если есть токен
   React.useEffect(() => {
-    loadCartFromDB();
+    const token = localStorage.getItem('token');
+    if (token) {
+      loadCartFromDB();
+    } else {
+      // Для неавторизованных пользователей загружаем из localStorage
+      loadCartFromStorage();
+    }
   }, []);
 
+  // Синхронизируем корзину с Redux state при изменении cartInfo
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    if (cartInfo.calculation_id && cartInfo.calculation_id !== calculationId) {
+      // Если calculation_id изменился, загружаем корзину заново
+      console.log('CartInfo changed, reloading cart. calculation_id:', cartInfo.calculation_id, 'item_count:', cartInfo.item_count);
+      loadCartFromDB();
+    } else if (!cartInfo.calculation_id && calculationId) {
+      // Если корзина была очищена в Redux, очищаем локальное состояние
+      setCart([]);
+      setComments({});
+      setCalculationId(null);
+    } else if (cartInfo.calculation_id === calculationId && cartInfo.item_count > 0 && cart.length === 0) {
+      // Если есть calculation_id, но корзина пуста, загружаем заново
+      console.log('Cart is empty but calculation_id exists, reloading cart');
+      loadCartFromDB();
+    } else if (cartInfo.calculation_id === calculationId && cartInfo.item_count !== cart.reduce((sum, item) => sum + item.quantity, 0)) {
+      // Если количество товаров не совпадает, перезагружаем корзину
+      console.log('Item count mismatch, reloading cart. Redux:', cartInfo.item_count, 'Local:', cart.reduce((sum, item) => sum + item.quantity, 0));
+      loadCartFromDB();
+    }
+  }, [cartInfo.calculation_id, cartInfo.item_count, isAuthenticated, calculationId, cart.length]);
+
   const loadCartFromDB = async () => {
+    console.log('loadCartFromDB called');
+    // Определяем, нужно ли использовать mock данные (только для GitHub Pages)
+    // В режиме разработки (localhost) всегда используем реальный API
+    const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const USE_MOCK_DATA = !isDev && !dest_api.startsWith('http');
+    
     // Пропускаем загрузку из БД, если используется mock режим (GitHub Pages)
-    if (!dest_api.startsWith('http')) {
+    if (USE_MOCK_DATA) {
+      console.log('Using mock mode, loading from storage');
       loadCartFromStorage();
       return;
     }
     
+    console.log('Using real API, dest_api:', dest_api, 'isDev:', isDev);
+    
     try {
-      // Сначала получаем информацию о корзине
-      const cartInfo = await apiService.getCartInfo();
-      setCalculationId(cartInfo.calculation_id);
+      // Используем cartInfo из Redux state, если он есть, иначе получаем через API
+      let currentCartInfo = cartInfo;
+      console.log('Current cartInfo from Redux:', currentCartInfo);
+      if (!currentCartInfo.calculation_id) {
+        console.log('No calculation_id in Redux, fetching from API');
+        currentCartInfo = await apiService.getCartInfo();
+        console.log('CartInfo from API:', currentCartInfo);
+        // Обновляем Redux state
+        await dispatch(getCartInfo());
+      }
+      
+      setCalculationId(currentCartInfo.calculation_id);
       
       // Проверяем, есть ли активный расчет (calculation_id > 0)
-      if (!cartInfo.calculation_id || cartInfo.calculation_id === 0) {
+      if (!currentCartInfo.calculation_id || currentCartInfo.calculation_id === 0) {
+        console.log('No active calculation, clearing cart');
         setCart([]);
         setComments({});
         // Fallback на localStorage
@@ -76,7 +136,9 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       }
       
       // Затем получаем материалы расчета
-      const materials = await apiService.getCalculationMaterials(cartInfo.calculation_id);
+      console.log('Fetching materials for calculation_id:', currentCartInfo.calculation_id);
+      const materials = await apiService.getCalculationMaterials(currentCartInfo.calculation_id);
+      console.log('Materials received:', materials);
       
       // Конвертируем материалы из БД в формат корзины
       const cartItems: CartItem[] = materials.map(item => ({
@@ -205,6 +267,17 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const removeFromCart = async (materialId: number) => {
     try {
+      // Для авторизованных пользователей отправляем изменение в бэкенд через Redux
+      if (isAuthenticated && cartInfo.calculation_id) {
+        await dispatch(removeMaterialFromCalculation({
+          calculationId: cartInfo.calculation_id,
+          materialId
+        }));
+        // Обновляем информацию о корзине
+        await dispatch(getCartInfo());
+      }
+      
+      // Обновляем локальное состояние
       setCart(prevCart => {
         const newCart = prevCart.filter(item => item.material.id !== materialId);
         saveCartToStorage(newCart, calculationId, comments);
@@ -220,6 +293,16 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (quantity <= 0) {
         await removeFromCart(materialId);
       } else {
+        // Для авторизованных пользователей отправляем изменение в бэкенд через Redux
+        if (isAuthenticated && cartInfo.calculation_id) {
+          await dispatch(updateMaterialInCalculation({
+            calculationId: cartInfo.calculation_id,
+            materialId,
+            updates: { quantity }
+          }));
+        }
+        
+        // Обновляем локальное состояние
         setCart(prevCart => {
           const newCart = prevCart.map(item =>
             item.material.id === materialId
@@ -237,6 +320,16 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const updateComment = async (materialId: number, comment: string) => {
     try {
+      // Для авторизованных пользователей отправляем изменение в бэкенд через Redux
+      if (isAuthenticated && cartInfo.calculation_id) {
+        await dispatch(updateMaterialInCalculation({
+          calculationId: cartInfo.calculation_id,
+          materialId,
+          updates: { comment }
+        }));
+      }
+      
+      // Обновляем локальное состояние
       setComments(prev => {
         const newComments = { ...prev, [materialId]: comment };
         saveCartToStorage(cart, calculationId, newComments);
@@ -252,14 +345,16 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       // Если есть активный расчет, меняем его статус на "rejected" (только если не mock режим)
       if (calculationId && dest_api.startsWith('http')) {
         try {
-          // Меняем статус заявки на "rejected" вместо удаления
-          await apiService.updateCalculationStatus(calculationId, 'rejected');
+          // Меняем статус заявки на "rejected" через DELETE endpoint
+          // DELETE для черновиков (pending) меняет статус на "rejected"
+          await apiService.deleteCalculation(calculationId);
         } catch (error) {
           console.warn('Failed to update calculation status to rejected:', error);
         }
       }
       
       // Очищаем локальное состояние
+      // Важно: calculationId должен стать null, чтобы при следующем добавлении создалась новая заявка
       setCart([]);
       setComments({});
       setCalculationId(null);
@@ -341,7 +436,9 @@ const HomePage: React.FC = () => {
   const filters = useFilters();
   const [materials, setMaterials] = React.useState<Material[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const { addToCart, getTotalItems } = useCart();
+  const [addingMaterialId, setAddingMaterialId] = React.useState<number | null>(null);
+  const { addToCart, getTotalItems, loadCartFromDB } = useCart();
+  const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   React.useEffect(() => {
     // Загружаем данные из API
@@ -451,7 +548,7 @@ const HomePage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
+                (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
               }}
             />
           </Link>
@@ -569,19 +666,40 @@ const HomePage: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div className="actions" style={{ flex: 1 }}>
                             <Link className="btn" to={`/materials/${material.id}`}>Подробнее</Link>
-                            <button 
-                              className="btn primary" 
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  await addToCart(material);
-                                } catch (error) {
-                                  console.error('Error adding to cart:', error);
-                                }
-                              }}
-                            >
-                              Добавить
-                            </button>
+                            {isAuthenticated ? (
+                              <button 
+                                className="btn primary" 
+                                type="button"
+                                disabled={addingMaterialId === material.id}
+                                onClick={async () => {
+                                  setAddingMaterialId(material.id);
+                                  try {
+                                    // Для авторизованных используем Redux action (отправляет в бэкенд)
+                                    const result = await dispatch(addMaterialToCalculation(material.id));
+                                    if (addMaterialToCalculation.fulfilled.match(result)) {
+                                      // Обновляем информацию о корзине в Redux
+                                      await dispatch(getCartInfo());
+                                      // Явно перезагружаем корзину из БД
+                                      console.log('Reloading cart after adding material');
+                                      await loadCartFromDB();
+                                    } else {
+                                      alert('Ошибка при добавлении материала');
+                                    }
+                                  } catch (error) {
+                                    console.error('Error adding to cart:', error);
+                                    alert('Ошибка при добавлении материала');
+                                  } finally {
+                                    setAddingMaterialId(null);
+                                  }
+                                }}
+                              >
+                                {addingMaterialId === material.id ? 'Добавляем...' : 'Добавить'}
+                              </button>
+                            ) : (
+                              <Link className="btn primary" to="/login">
+                                Войти для добавления
+                              </Link>
+                            )}
                           </div>
                   <div className="muted" style={{ fontSize: '11px', lineHeight: 1.3, marginLeft: '15px', maxWidth: '200px', textAlign: 'right' }}>
                     {material.props ? material.props.slice(0, 3).map((prop: string, index: number) => (
@@ -745,7 +863,7 @@ const MaterialDetailPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
+                (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
               }}
             />
           </Link>
@@ -796,6 +914,9 @@ const MaterialDetailPage: React.FC = () => {
 
 // Страница корзины в стиле calc.html
 const CartPage: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated } = useSelector((state: RootState) => state.user);
+  const { cartInfo } = useSelector((state: RootState) => state.calculations);
   const { cart, removeFromCart, updateQuantity, updateComment, clearCart, formCalculation } = useCart();
   const [mass, setMass] = React.useState('');
   const [frequency, setFrequency] = React.useState('');
@@ -833,8 +954,26 @@ const CartPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const result = await formCalculation(parseFloat(mass), parseFloat(frequency));
-      setResults(result.calculation_results || []);
+      // Для авторизованных пользователей используем Redux action (отправляет в бэкенд)
+      if (isAuthenticated && cartInfo.calculation_id) {
+        const result = await dispatch(formCalculationAction({
+          calculationId: cartInfo.calculation_id,
+          data: {
+            installation_weight: parseFloat(mass),
+            natural_frequency: parseFloat(frequency)
+          }
+        }));
+        if (formCalculationAction.fulfilled.match(result)) {
+          setResults(result.payload.calculation_results || []);
+          alert('Заявка успешно сформирована! Статус изменен на "завершена".');
+        } else {
+          alert('Ошибка при формировании заявки');
+        }
+      } else {
+        // Для неавторизованных или если нет calculationId используем старую систему
+        const result = await formCalculation(parseFloat(mass), parseFloat(frequency));
+        setResults(result.calculation_results || []);
+      }
     } catch (error) {
       console.error('Error forming calculation:', error);
       alert('Ошибка при выполнении расчета: ' + (error instanceof Error ? error.message : 'Неизвестная ошибка'));
@@ -845,6 +984,17 @@ const CartPage: React.FC = () => {
 
   const handleClearCart = async () => {
     if (window.confirm('Вы уверены, что хотите очистить корзину?')) {
+      // Для авторизованных пользователей меняем статус заявки на "rejected" в бэкенде
+      if (isAuthenticated && cartInfo.calculation_id) {
+        try {
+          await dispatch(deleteCalculation(cartInfo.calculation_id));
+          // После удаления обновляем информацию о корзине
+          await dispatch(getCartInfo());
+        } catch (error) {
+          console.error('Error clearing cart:', error);
+        }
+      }
+      // Очищаем локальную корзину
       await clearCart();
       setResults([]);
     }
@@ -866,7 +1016,7 @@ const CartPage: React.FC = () => {
                 background: '#ffffff00'
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = `${dest_root}/logo.png`;
+                (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
               }}
             />
           </Link>

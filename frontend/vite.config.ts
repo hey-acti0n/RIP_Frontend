@@ -13,6 +13,22 @@ export default defineConfig({
       devOptions: {
         enabled: true,
       },
+      workbox: {
+        // Игнорируем API запросы - они должны идти напрямую к бэкенду
+        navigateFallbackDenylist: [/^\/api/],
+        // Не перехватываем запросы к API - используем NetworkOnly
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\/.*/i,
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'api-cache',
+            },
+          },
+        ],
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       manifest: {
         name: "UltraRezina",
         short_name: "UltraRezina",

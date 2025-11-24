@@ -229,7 +229,16 @@ class ApiService {
   // Получение информации о корзине
   async getCartInfo(): Promise<{ calculation_id: number; item_count: number }> {
     try {
-      return await this.request<{ calculation_id: number; item_count: number }>('/calculations/cart-info');
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return await this.request<{ calculation_id: number; item_count: number }>('/calculations/cart-info', {
+        headers,
+      });
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
@@ -239,7 +248,16 @@ class ApiService {
   // Получение материалов расчета
   async getCalculationMaterials(calculationId: number): Promise<MaterialCalculation[]> {
     try {
-      return await this.request<MaterialCalculation[]>(`/calculations/${calculationId}/materials`);
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return await this.request<MaterialCalculation[]>(`/calculations/${calculationId}/materials`, {
+        headers,
+      });
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
