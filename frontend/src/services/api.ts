@@ -326,6 +326,26 @@ class ApiService {
       throw error;
     }
   }
+
+  // Обновление статуса расчета на rejected (для черновиков)
+  async updateCalculationStatus(calculationId: number, status: string): Promise<void> {
+    try {
+      // Для rejected используем DELETE endpoint, который для черновиков (pending) меняет статус на "rejected"
+      if (status === 'rejected') {
+        await this.request(`/calculations/${calculationId}`, {
+          method: 'DELETE',
+        });
+      } else {
+        await this.request(`/calculations/${calculationId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status }),
+        });
+      }
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  }
 }
 
 export const apiService = new ApiService();

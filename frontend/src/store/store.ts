@@ -1,9 +1,15 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit"
 import filtersReducer from "./slices/filtersSlice"
+import userReducer from "./slices/userSlice"
+import calculationsReducer from "./slices/calculationsSlice"
 
-export default configureStore({
+export const store = configureStore({
     reducer: combineReducers({
-        filters: filtersReducer
+        filters: filtersReducer,
+        user: userReducer,
+        calculations: calculationsReducer
     })
 })
+
+export default store
 

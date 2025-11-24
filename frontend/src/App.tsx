@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/App.css';
 import { apiService } from './services/api';
@@ -8,6 +8,7 @@ import Breadcrumbs from './components/Breadcrumbs';
 import TopNavbar from './components/TopNavbar';
 import type { Material } from './types/api';
 import { useFilters, updateFilterAction, resetFiltersAction } from './store/slices/filtersSlice';
+import type { AppDispatch } from './store/types';
 import { getDestRoot, dest_img, dest_api } from './config/target_config';
 
 // Типы для компонентов
@@ -158,10 +159,11 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
     
     try {
-      // Добавляем в БД
+      // Если корзина пуста или calculationId отсутствует, создастся новая заявка (черновик)
+      // API автоматически создаст новую заявку со статусом "pending" если её нет
       const result = await apiService.addMaterialToCart(material.id, 1);
       
-      // Обновляем calculationId если он изменился
+      // Обновляем calculationId если он изменился (новая заявка создана)
       if (result.calculation_id && result.calculation_id !== calculationId) {
         setCalculationId(result.calculation_id);
       }
@@ -247,12 +249,13 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const clearCart = async () => {
     try {
-      // Если есть активный расчет, удаляем его из БД (только если не mock режим)
+      // Если есть активный расчет, меняем его статус на "rejected" (только если не mock режим)
       if (calculationId && dest_api.startsWith('http')) {
         try {
-          await apiService.deleteCalculation(calculationId);
+          // Меняем статус заявки на "rejected" вместо удаления
+          await apiService.updateCalculationStatus(calculationId, 'rejected');
         } catch (error) {
-          console.warn('Failed to delete calculation from DB:', error);
+          console.warn('Failed to update calculation status to rejected:', error);
         }
       }
       
@@ -334,12 +337,11 @@ const useCart = () => {
 
 // Главная страница в стиле оригинального каталога
 const HomePage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const filters = useFilters();
   const [materials, setMaterials] = React.useState<Material[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { addToCart, getTotalItems } = useCart();
-
 
   React.useEffect(() => {
     // Загружаем данные из API
@@ -519,9 +521,9 @@ const HomePage: React.FC = () => {
                           src={`${getDestRoot()}/cart_icon.png`}
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
-                  }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
+                          }}
                         />
                       </Link>
                       <span className="cart-badge">{getTotalItems()}</span>
@@ -1078,6 +1080,13 @@ const CartPage: React.FC = () => {
   );
 };
 
+// Импорты новых страниц
+import LoginPage from './pages/LoginPage/LoginPage';
+import RegisterPage from './pages/RegisterPage/RegisterPage';
+import ProfilePage from './pages/ProfilePage/ProfilePage';
+import CalculationsListPage from './pages/CalculationsListPage/CalculationsListPage';
+import CalculationPage from './pages/CalculationPage/CalculationPage';
+
 function App() {
   // Определяем базовый путь для GitHub Pages или локальной разработки
   // В режиме разработки (localhost) basename должен быть "/"
@@ -1095,6 +1104,11 @@ function App() {
             <Route path="/materials" element={<HomePage />} />
             <Route path="/materials/:id" element={<MaterialDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/calculations" element={<CalculationsListPage />} />
+            <Route path="/calculations/:id" element={<CalculationPage />} />
           </Routes>
         </div>
       </Router>

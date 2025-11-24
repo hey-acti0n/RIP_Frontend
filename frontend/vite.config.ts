@@ -46,7 +46,7 @@ export default defineConfig({
         target: "https://localhost:8080",
         changeOrigin: true,
         secure: false, // Игнорировать ошибки самоподписанного сертификата
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        // Не переписываем путь, так как бэкенд ожидает /api/v1/...
       },
     },
   },
