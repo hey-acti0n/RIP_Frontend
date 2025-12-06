@@ -55,9 +55,11 @@ const initialState: CalculationsState = {
 // Получение списка заявок
 export const getCalculationsList = createAsyncThunk(
   'calculations/getCalculationsList',
-  async (filters?: { status?: string; formed_from?: string; formed_to?: string; page?: number; limit?: number }, { rejectWithValue }) => {
+  async (filters?: { status?: string; formed_from?: string; formed_to?: string; page?: number; limit?: number }, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
@@ -69,11 +71,7 @@ export const getCalculationsList = createAsyncThunk(
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
-      const response = await axios.get(`/calculations?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(`/calculations?${params.toString()}`);
 
       return response.data.data || response.data;
     } catch (error: any) {
@@ -85,18 +83,16 @@ export const getCalculationsList = createAsyncThunk(
 // Получение информации о корзине
 export const getCartInfo = createAsyncThunk(
   'calculations/getCartInfo',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return { calculation_id: null, item_count: 0 };
       }
 
-      const response = await axios.get('/calculations/cart-info', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get('/calculations/cart-info');
 
       return response.data;
     } catch (error: any) {
@@ -109,18 +105,16 @@ export const getCartInfo = createAsyncThunk(
 // Получение заявки по ID
 export const getCalculationById = createAsyncThunk(
   'calculations/getCalculationById',
-  async (id: number, { rejectWithValue }) => {
+  async (id: number, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
 
-      const response = await axios.get(`/calculations/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(`/calculations/${id}`);
 
       return response.data;
     } catch (error: any) {
@@ -132,18 +126,16 @@ export const getCalculationById = createAsyncThunk(
 // Получение материалов заявки
 export const getCalculationMaterials = createAsyncThunk(
   'calculations/getCalculationMaterials',
-  async (calculationId: number, { rejectWithValue }) => {
+  async (calculationId: number, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
 
-      const response = await axios.get(`/calculations/${calculationId}/materials`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(`/calculations/${calculationId}/materials`);
 
       return response.data;
     } catch (error: any) {
@@ -155,18 +147,16 @@ export const getCalculationMaterials = createAsyncThunk(
 // Добавление материала в заявку
 export const addMaterialToCalculation = createAsyncThunk(
   'calculations/addMaterialToCalculation',
-  async (materialId: number, { rejectWithValue, dispatch }) => {
+  async (materialId: number, { rejectWithValue, dispatch, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
 
-      const response = await axios.post(`/materials/${materialId}/add-to-cart`, {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.post(`/materials/${materialId}/add-to-cart`, {});
 
       // Обновляем информацию о корзине после добавления
       if (response.data.calculation_id) {
@@ -183,18 +173,16 @@ export const addMaterialToCalculation = createAsyncThunk(
 // Удаление материала из заявки
 export const removeMaterialFromCalculation = createAsyncThunk(
   'calculations/removeMaterialFromCalculation',
-  async ({ calculationId, materialId }: { calculationId: number; materialId: number }, { rejectWithValue }) => {
+  async ({ calculationId, materialId }: { calculationId: number; materialId: number }, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
 
-      await axios.delete(`/calculations/${calculationId}/materials/${materialId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.delete(`/calculations/${calculationId}/materials/${materialId}`);
 
       return { calculationId, materialId };
     } catch (error: any) {
@@ -206,18 +194,16 @@ export const removeMaterialFromCalculation = createAsyncThunk(
 // Обновление материала в заявке
 export const updateMaterialInCalculation = createAsyncThunk(
   'calculations/updateMaterialInCalculation',
-  async ({ calculationId, materialId, updates }: { calculationId: number; materialId: number; updates: { quantity?: number; comment?: string } }, { rejectWithValue }) => {
+  async ({ calculationId, materialId, updates }: { calculationId: number; materialId: number; updates: { quantity?: number; comment?: string } }, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
 
-      await axios.put(`/calculations/${calculationId}/materials/${materialId}`, updates, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.put(`/calculations/${calculationId}/materials/${materialId}`, updates);
 
       return { calculationId, materialId, updates };
     } catch (error: any) {
@@ -229,18 +215,16 @@ export const updateMaterialInCalculation = createAsyncThunk(
 // Формирование заявки (подтверждение)
 export const formCalculation = createAsyncThunk(
   'calculations/formCalculation',
-  async ({ calculationId, data }: { calculationId: number; data: { installation_weight: number; natural_frequency: number } }, { rejectWithValue }) => {
+  async ({ calculationId, data }: { calculationId: number; data: { installation_weight: number; natural_frequency: number } }, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
 
-      const response = await axios.put(`/calculations/${calculationId}/form`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.put(`/calculations/${calculationId}/form`, data);
 
       return response.data;
     } catch (error: any) {
@@ -252,18 +236,16 @@ export const formCalculation = createAsyncThunk(
 // Удаление заявки
 export const deleteCalculation = createAsyncThunk(
   'calculations/deleteCalculation',
-  async (calculationId: number, { rejectWithValue }) => {
+  async (calculationId: number, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из Redux state
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Требуется авторизация');
       }
 
-      await axios.delete(`/calculations/${calculationId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.delete(`/calculations/${calculationId}`);
 
       return calculationId;
     } catch (error: any) {

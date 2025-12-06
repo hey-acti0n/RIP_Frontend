@@ -16,16 +16,10 @@ const initialState: UserState = {
   fullName: '',
   email: '',
   isAuthenticated: false,
-  token: localStorage.getItem('token') || null,
+  token: null, // Не сохраняем токен в localStorage, чтобы при обновлении страницы пользователь выходил
   error: null,
   loading: false,
 };
-
-// Проверяем, есть ли сохраненный токен при инициализации
-if (initialState.token) {
-  initialState.isAuthenticated = true;
-  // Можно также загрузить данные пользователя из токена или сделать запрос к /users/profile
-}
 
 // Асинхронное действие для авторизации
 export const loginUserAsync = createAsyncThunk(
@@ -36,7 +30,7 @@ export const loginUserAsync = createAsyncThunk(
       const token = response.data.token || response.data.access_token;
       
       if (token) {
-        localStorage.setItem('token', token);
+        // Не сохраняем токен в localStorage, чтобы при обновлении страницы пользователь выходил
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
       
@@ -90,9 +84,11 @@ export const logoutUserAsync = createAsyncThunk(
 // Получение профиля пользователя
 export const getProfileAsync = createAsyncThunk(
   'user/getProfileAsync',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      const token = localStorage.getItem('token');
+      // Получаем токен из состояния Redux, а не из localStorage
+      const state = getState() as any;
+      const token = state.user?.token;
       if (!token) {
         return rejectWithValue('Токен не найден');
       }

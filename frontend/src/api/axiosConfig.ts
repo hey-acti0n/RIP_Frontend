@@ -15,25 +15,25 @@ if (!axios.defaults.baseURL) {
   axios.defaults.baseURL = API_BASE_URL;
 }
 
-// Добавляем токен из localStorage при инициализации
-const token = localStorage.getItem('token');
-if (token) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
-
-// Interceptor для добавления токена к каждому запросу
-axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// Функция для настройки interceptor (вызывается из main.tsx после создания store)
+export const setupAxiosInterceptors = (store: any) => {
+  // Interceptor для добавления токена к каждому запросу
+  // Токен берется из Redux state, а не из localStorage
+  axios.interceptors.request.use(
+    (config) => {
+      // Получаем токен из Redux state
+      const state = store.getState();
+      const token = (state as any).user?.token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+  );
+};
 
 // Interceptor для обработки ошибок авторизации
 axios.interceptors.response.use(

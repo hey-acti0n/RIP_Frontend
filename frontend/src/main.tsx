@@ -6,13 +6,13 @@ import './index.css'
 import App from './App.tsx'
 import store from "./store/store"
 import { getProfileAsync } from "./store/slices/userSlice"
-import './api/axiosConfig'
+import { setupAxiosInterceptors } from './api/axiosConfig'
 
-// Загружаем профиль пользователя при наличии токена
-const token = localStorage.getItem('token');
-if (token) {
-  store.dispatch(getProfileAsync());
-}
+// Очищаем токен при обновлении страницы, чтобы пользователь выходил из аккаунта
+localStorage.removeItem('token');
+
+// Настраиваем axios interceptor после создания store
+setupAxiosInterceptors(store);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

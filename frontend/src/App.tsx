@@ -60,16 +60,15 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [calculationId, setCalculationId] = React.useState<number | null>(null);
   const [comments, setComments] = React.useState<Record<number, string>>({});
 
-  // Загружаем корзину из БД при инициализации только если есть токен
+  // Загружаем корзину из БД при инициализации только если пользователь авторизован
   React.useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-    loadCartFromDB();
+    if (isAuthenticated) {
+      loadCartFromDB();
     } else {
       // Для неавторизованных пользователей загружаем из localStorage
       loadCartFromStorage();
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Синхронизируем корзину с Redux state при изменении cartInfo
   React.useEffect(() => {

@@ -229,15 +229,11 @@ class ApiService {
   // Получение информации о корзине
   async getCartInfo(): Promise<{ calculation_id: number; item_count: number }> {
     try {
-      const token = localStorage.getItem('token');
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      // Токен добавляется автоматически через axios interceptor из Redux state
       return await this.request<{ calculation_id: number; item_count: number }>('/calculations/cart-info', {
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     } catch (error) {
       console.error('API request failed:', error);
@@ -248,15 +244,11 @@ class ApiService {
   // Получение материалов расчета
   async getCalculationMaterials(calculationId: number): Promise<MaterialCalculation[]> {
     try {
-      const token = localStorage.getItem('token');
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      // Токен добавляется автоматически через axios interceptor из Redux state
       return await this.request<MaterialCalculation[]>(`/calculations/${calculationId}/materials`, {
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     } catch (error) {
       console.error('API request failed:', error);
