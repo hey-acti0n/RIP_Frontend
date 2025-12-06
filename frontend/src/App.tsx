@@ -666,7 +666,7 @@ const HomePage: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div className="actions" style={{ flex: 1 }}>
                             <Link className="btn" to={`/materials/${material.id}`}>Подробнее</Link>
-                            {isAuthenticated ? (
+                            {isAuthenticated && (
                             <button 
                               className="btn primary" 
                               type="button"
@@ -695,10 +695,6 @@ const HomePage: React.FC = () => {
                             >
                                 {addingMaterialId === material.id ? 'Добавляем...' : 'Добавить'}
                             </button>
-                            ) : (
-                              <Link className="btn primary" to="/login">
-                                Войти для добавления
-                              </Link>
                             )}
                           </div>
                   <div className="muted" style={{ fontSize: '11px', lineHeight: 1.3, marginLeft: '15px', maxWidth: '200px', textAlign: 'right' }}>
@@ -875,7 +871,6 @@ const MaterialDetailPage: React.FC = () => {
           { label: 'Материалы', href: '/' },
           { label: material.name }
         ]} />
-        <Link className="btn" to="/">Назад</Link>
         <section className="panel detail">
           <div className="detail-grid">
             <div>
@@ -1028,7 +1023,6 @@ const CartPage: React.FC = () => {
           { label: 'Материалы', href: '/' },
           { label: 'Расчёт' }
         ]} />
-        <Link className="btn" to="/">Назад</Link>
         <button
           className="btn"
           onClick={handleClearCart}
