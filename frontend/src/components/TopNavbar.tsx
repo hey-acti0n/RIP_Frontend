@@ -49,7 +49,7 @@ const TopNavbar: React.FC = () => {
               to="/calculations" 
               className={`nav-link ${isCalculationsActive ? 'active' : ''}`}
             >
-              Мои заявки
+              Мои рассчёты
             </Link>
             <Link 
               to="/profile" 

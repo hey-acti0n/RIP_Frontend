@@ -69,7 +69,7 @@ const CalculationPage: React.FC = () => {
 
     const handleRemoveMaterial = async (materialId: number) => {
         if (!id) return;
-        if (window.confirm('Вы уверены, что хотите удалить этот материал из заявки?')) {
+        if (window.confirm('Вы уверены, что хотите удалить этот материал из рассчёта?')) {
             await dispatch(removeMaterialFromCalculation({
                 calculationId: parseInt(id),
                 materialId
@@ -97,15 +97,15 @@ const CalculationPage: React.FC = () => {
             // Обновляем заявку и материалы
             dispatch(getCalculationById(parseInt(id)));
             dispatch(getCalculationMaterials(parseInt(id)));
-            // Обновляем информацию о корзине (заявка больше не черновик)
+            // Обновляем информацию о корзине (рассчёт больше не черновик)
             dispatch(getCartInfo());
-            alert('Заявка успешно сформирована!');
+            alert('Рассчёт успешно сформирован!');
         }
     };
 
     const handleDeleteCalculation = async () => {
         if (!id) return;
-        if (window.confirm('Вы уверены, что хотите удалить эту заявку?')) {
+        if (window.confirm('Вы уверены, что хотите удалить этот рассчёт?')) {
             const result = await dispatch(deleteCalculation(parseInt(id)));
             if (deleteCalculation.fulfilled.match(result)) {
                 // Обновляем информацию о корзине после удаления
@@ -140,11 +140,11 @@ const CalculationPage: React.FC = () => {
             </header>
             <Container style={{ maxWidth: '1200px', marginTop: '50px' }}>
                 <div style={{ marginBottom: '20px' }}>
-                    <Link to="/calculations" className="btn btn-secondary">← Назад к списку заявок</Link>
+                    <Link to="/calculations" className="btn btn-secondary">← Назад к списку рассчётов</Link>
                 </div>
 
                 <h1 style={{ color: 'white', marginBottom: '30px' }}>
-                    Заявка #{currentCalculation.id}
+                    Рассчёт #{currentCalculation.id}
                     <span className={`badge bg-${isDraft ? 'secondary' : 'info'}`} style={{ marginLeft: '15px' }}>
                         {isDraft ? 'Черновик' : (currentCalculation.status === 'pending' ? 'Черновик' : currentCalculation.status)}
                     </span>
@@ -160,7 +160,7 @@ const CalculationPage: React.FC = () => {
                     <>
                         <Card className="mb-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', border: 'none' }}>
                             <Card.Body>
-                                <h3 style={{ color: 'white', marginBottom: '20px' }}>Информация о заявке</h3>
+                                <h3 style={{ color: 'white', marginBottom: '20px' }}>Информация о рассчёте</h3>
                                 <Row>
                                     <Col md={6}>
                                         <p style={{ color: 'white' }}><strong>Название:</strong> {currentCalculation.title || 'Без названия'}</p>
@@ -182,7 +182,7 @@ const CalculationPage: React.FC = () => {
                         {isDraft && (
                             <Card className="mb-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', border: 'none' }}>
                                 <Card.Body>
-                                    <h3 style={{ color: 'white', marginBottom: '20px' }}>Формирование заявки</h3>
+                                    <h3 style={{ color: 'white', marginBottom: '20px' }}>Формирование рассчёта</h3>
                                     <Form onSubmit={handleFormCalculation}>
                                         <Row>
                                             <Col md={6}>
@@ -213,16 +213,16 @@ const CalculationPage: React.FC = () => {
                                             </Col>
                                         </Row>
                                         <Button variant="primary" type="submit" disabled={calculationMaterials.length === 0}>
-                                            Подтвердить заявку
+                                            Подтвердить рассчёт
                                         </Button>
                                     </Form>
                                 </Card.Body>
                             </Card>
                         )}
 
-                        <h3 style={{ color: 'white', marginBottom: '20px' }}>Материалы в заявке</h3>
+                        <h3 style={{ color: 'white', marginBottom: '20px' }}>Материалы в рассчёте</h3>
                         {calculationMaterials.length === 0 ? (
-                            <Alert variant="info">В заявке пока нет материалов</Alert>
+                            <Alert variant="info">В рассчёте пока нет материалов</Alert>
                         ) : (
                             <Row>
                                 {calculationMaterials.map((item) => (
@@ -291,7 +291,7 @@ const CalculationPage: React.FC = () => {
                         {isDraft && (
                             <div style={{ marginTop: '30px', textAlign: 'center' }}>
                                 <Button variant="danger" onClick={handleDeleteCalculation}>
-                                    Удалить заявку
+                                    Удалить рассчёт
                                 </Button>
                             </div>
                         )}

@@ -64,7 +64,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   React.useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      loadCartFromDB();
+    loadCartFromDB();
     } else {
       // Для неавторизованных пользователей загружаем из localStorage
       loadCartFromStorage();
@@ -618,9 +618,9 @@ const HomePage: React.FC = () => {
                           src={`${getDestRoot()}/cart_icon.png`}
                           alt="Корзина"
                           style={{ width: '40px', height: '40px', verticalAlign: 'middle' }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
-                          }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `${getDestRoot()}/logo.png`;
+                  }}
                         />
                       </Link>
                       <span className="cart-badge">{getTotalItems()}</span>
@@ -667,11 +667,11 @@ const HomePage: React.FC = () => {
                           <div className="actions" style={{ flex: 1 }}>
                             <Link className="btn" to={`/materials/${material.id}`}>Подробнее</Link>
                             {isAuthenticated ? (
-                              <button 
-                                className="btn primary" 
-                                type="button"
+                            <button 
+                              className="btn primary" 
+                              type="button"
                                 disabled={addingMaterialId === material.id}
-                                onClick={async () => {
+                              onClick={async () => {
                                   setAddingMaterialId(material.id);
                                   try {
                                     // Для авторизованных используем Redux action (отправляет в бэкенд)
@@ -685,16 +685,16 @@ const HomePage: React.FC = () => {
                                     } else {
                                       alert('Ошибка при добавлении материала');
                                     }
-                                  } catch (error) {
-                                    console.error('Error adding to cart:', error);
+                                } catch (error) {
+                                  console.error('Error adding to cart:', error);
                                     alert('Ошибка при добавлении материала');
                                   } finally {
                                     setAddingMaterialId(null);
-                                  }
-                                }}
-                              >
+                                }
+                              }}
+                            >
                                 {addingMaterialId === material.id ? 'Добавляем...' : 'Добавить'}
-                              </button>
+                            </button>
                             ) : (
                               <Link className="btn primary" to="/login">
                                 Войти для добавления
@@ -965,14 +965,14 @@ const CartPage: React.FC = () => {
         }));
         if (formCalculationAction.fulfilled.match(result)) {
           setResults(result.payload.calculation_results || []);
-          alert('Заявка успешно сформирована! Статус изменен на "завершена".');
+          alert('Рассчёт успешно сформирован! Статус изменен на "завершён".');
         } else {
-          alert('Ошибка при формировании заявки');
+          alert('Ошибка при формировании рассчёта');
         }
       } else {
         // Для неавторизованных или если нет calculationId используем старую систему
-        const result = await formCalculation(parseFloat(mass), parseFloat(frequency));
-        setResults(result.calculation_results || []);
+      const result = await formCalculation(parseFloat(mass), parseFloat(frequency));
+      setResults(result.calculation_results || []);
       }
     } catch (error) {
       console.error('Error forming calculation:', error);
@@ -1062,7 +1062,7 @@ const CartPage: React.FC = () => {
                 style={{ flex: 1 }}
               />
               <button className="btn primary" type="submit" disabled={loading}>
-                {loading ? 'Расчет...' : 'Оформить заявку'}
+                {loading ? 'Расчет...' : 'Оформить рассчёт'}
               </button>
             </div>
           </section>

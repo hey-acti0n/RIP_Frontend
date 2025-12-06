@@ -62,7 +62,7 @@ const CalculationsListPage: React.FC = () => {
                 </div>
             </header>
             <Container style={{ maxWidth: '1200px', marginTop: '50px' }}>
-                <h1 style={{ textAlign: 'center', marginBottom: '30px', color: 'white' }}>Мои заявки</h1>
+                <h1 style={{ textAlign: 'center', marginBottom: '30px', color: 'white' }}>Мои рассчёты</h1>
                 
                 {error && <Alert variant="danger">{error}</Alert>}
 
@@ -72,7 +72,7 @@ const CalculationsListPage: React.FC = () => {
                     </div>
                 ) : calculations.length === 0 ? (
                     <Alert variant="info" style={{ textAlign: 'center' }}>
-                        У вас пока нет заявок
+                        У вас пока нет рассчётов
                     </Alert>
                 ) : (
                     <Table striped bordered hover variant="dark" responsive>

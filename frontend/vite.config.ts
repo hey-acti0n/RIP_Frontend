@@ -53,10 +53,13 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? "/RIP_Frontend/" : "/",
   server: {
     port: 3000,
-    https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'ssl/key.pem')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'ssl/cert.pem')),
-    },
+    host: '127.0.0.1', // Явно указываем IPv4 адрес
+    // Отключаем HTTPS в dev-режиме для упрощения разработки
+    // Бэкенд остается на HTTPS
+    // https: {
+    //   key: fs.readFileSync(path.resolve(__dirname, 'ssl/key.pem')),
+    //   cert: fs.readFileSync(path.resolve(__dirname, 'ssl/cert.pem')),
+    // },
     proxy: {
       "/api": {
         target: "https://localhost:8080",
@@ -65,6 +68,8 @@ export default defineConfig({
         // Не переписываем путь, так как бэкенд ожидает /api/v1/...
       },
     },
+    // Автоматически открывать браузер (опционально)
+    // open: true,
   },
 })
 
