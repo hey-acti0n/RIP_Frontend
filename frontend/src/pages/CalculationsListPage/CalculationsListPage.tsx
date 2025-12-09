@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
-import { Container, Table, Spinner, Alert } from 'react-bootstrap';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Container, Table, Spinner, Alert, Form, Row, Col, Button } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../../store/types';
-import { getCalculationsList } from '../../store/slices/calculationsSlice';
+import { getCalculationsList, triggerAsyncCalculation } from '../../store/slices/calculationsSlice';
 import { getDestRoot } from '../../config/target_config';
 import './CalculationsListPage.css';
 
@@ -12,14 +12,65 @@ const CalculationsListPage: React.FC = () => {
     const navigate = useNavigate();
     const { calculations, loading, error } = useSelector((state: RootState) => state.calculations);
     const { isAuthenticated } = useSelector((state: RootState) => state.user);
+    
+    const [dateFrom, setDateFrom] = useState<string>('');
+    const [dateTo, setDateTo] = useState<string>('');
 
     useEffect(() => {
         if (!isAuthenticated) {
             navigate('/login');
             return;
         }
-        dispatch(getCalculationsList());
+        // Загружаем только рассчёты со статусом "completed" (Завершён)
+        dispatch(getCalculationsList({ status: 'completed' }));
     }, [dispatch, navigate, isAuthenticated]);
+
+    // Short Polling: автоматическое обновление списка заявок каждые 10 секунд
+    useEffect(() => {
+        if (!isAuthenticated) {
+            return;
+        }
+
+        const fetchCalculations = () => {
+            const filters: any = { status: 'completed', silent: true }; // silent: true для тихого обновления
+            if (dateFrom) {
+                filters.formed_from = dateFrom;
+            }
+            if (dateTo) {
+                filters.formed_to = dateTo;
+            }
+            // Используем silent обновление без показа loading состояния
+            dispatch(getCalculationsList(filters));
+        };
+
+        // Устанавливаем интервал для периодического обновления
+        const intervalId = setInterval(fetchCalculations, 10000); // Обновление каждые 10 секунд
+
+        // Очищаем интервал при размонтировании компонента
+        return () => clearInterval(intervalId);
+    }, [dispatch, isAuthenticated, dateFrom, dateTo]);
+
+    const handleFilter = (e: React.FormEvent) => {
+        e.preventDefault();
+        const filters: any = { status: 'completed' };
+        if (dateFrom) {
+            filters.formed_from = dateFrom;
+        }
+        if (dateTo) {
+            filters.formed_to = dateTo;
+        }
+        dispatch(getCalculationsList(filters));
+    };
+
+    const handleReset = () => {
+        setDateFrom('');
+        setDateTo('');
+        dispatch(getCalculationsList({ status: 'completed' }));
+    };
+
+    const handleTriggerAsyncCalculation = (calculationId: number) => {
+        dispatch(triggerAsyncCalculation(calculationId));
+    };
 
   const getStatusBadge = (status: string) => {
     const statusMap: { [key: string]: { variant: string; text: string } } = {
@@ -37,6 +88,45 @@ const CalculationsListPage: React.FC = () => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('ru-RU');
     };
+
+    // Мемоизируем таблицу для предотвращения лишних перерисовок
+    // Используем строковое представление calculations для сравнения
+    const calculationsKey = useMemo(() => 
+        calculations.map(c => `${c.id}-${c.total_cost || 0}`).join(','), 
+        [calculations]
+    );
+    
+    const tableContent = useMemo(() => {
+        return calculations.map((calculation) => (
+            <tr key={calculation.id}>
+                <td>{calculation.id}</td>
+                <td>{calculation.title || calculation.description || 'Без названия'}</td>
+                <td>{getStatusBadge(calculation.status)}</td>
+                <td>{formatDate(calculation.created_at)}</td>
+                <td>{formatDate(calculation.formed_at)}</td>
+                <td>{formatDate(calculation.completed_at)}</td>
+                <td>{calculation.total_cost ? `${calculation.total_cost.toFixed(2)} ₽` : '-'}</td>
+                <td>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                        <Link
+                            to={`/calculations/${calculation.id}`}
+                            className="btn btn-sm btn-primary"
+                        >
+                            Просмотр
+                        </Link>
+                        <Button
+                            variant="warning"
+                            size="sm"
+                            onClick={() => handleTriggerAsyncCalculation(calculation.id)}
+                            disabled={loading}
+                        >
+                            Пересчитать
+                        </Button>
+                    </div>
+                </td>
+            </tr>
+        ));
+    }, [calculationsKey, loading]);
 
     if (!isAuthenticated) {
         return null;
@@ -64,6 +154,60 @@ const CalculationsListPage: React.FC = () => {
             <Container style={{ maxWidth: '1200px', marginTop: '50px' }}>
                 <h1 style={{ textAlign: 'center', marginBottom: '30px', color: 'white' }}>Мои рассчёты</h1>
                 
+                {/* Фильтры по датам */}
+                <div style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    padding: '20px', 
+                    borderRadius: '8px', 
+                    marginBottom: '30px' 
+                }}>
+                    <Form onSubmit={handleFilter}>
+                        <Row className="g-3 align-items-end">
+                            <Col md={3}>
+                                <Form.Group>
+                                    <Form.Label style={{ color: 'white' }}>Дата от</Form.Label>
+                                    <Form.Control
+                                        type="date"
+                                        value={dateFrom}
+                                        onChange={(e) => setDateFrom(e.target.value)}
+                                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={3}>
+                                <Form.Group>
+                                    <Form.Label style={{ color: 'white' }}>Дата до</Form.Label>
+                                    <Form.Control
+                                        type="date"
+                                        value={dateTo}
+                                        onChange={(e) => setDateTo(e.target.value)}
+                                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={3}>
+                                <Button 
+                                    type="submit" 
+                                    variant="primary" 
+                                    style={{ width: '100%' }}
+                                >
+                                    Применить фильтр
+                                </Button>
+                            </Col>
+                            <Col md={3}>
+                                <Button 
+                                    type="button" 
+                                    variant="secondary" 
+                                    onClick={handleReset}
+                                    style={{ width: '100%' }}
+                                >
+                                    Сбросить
+                                </Button>
+                            </Col>
+                        </Row>
+                    </Form>
+                </div>
+                
                 {error && <Alert variant="danger">{error}</Alert>}
 
                 {loading ? (
@@ -89,25 +233,7 @@ const CalculationsListPage: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {calculations.map((calculation) => (
-                                <tr key={calculation.id}>
-                                    <td>{calculation.id}</td>
-                                    <td>{calculation.title || calculation.description || 'Без названия'}</td>
-                                    <td>{getStatusBadge(calculation.status)}</td>
-                                    <td>{formatDate(calculation.created_at)}</td>
-                                    <td>{formatDate(calculation.formed_at)}</td>
-                                    <td>{formatDate(calculation.completed_at)}</td>
-                                    <td>{calculation.total_cost ? `${calculation.total_cost.toFixed(2)} ₽` : '-'}</td>
-                                    <td>
-                                        <Link
-                                            to={`/calculations/${calculation.id}`}
-                                            className="btn btn-sm btn-primary"
-                                        >
-                                            Просмотр
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))}
+                            {tableContent}
                         </tbody>
                     </Table>
                 )}

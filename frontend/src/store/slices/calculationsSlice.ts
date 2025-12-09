@@ -52,12 +52,11 @@ const initialState: CalculationsState = {
   error: null,
 };
 
-// Получение списка заявок
+
 export const getCalculationsList = createAsyncThunk(
   'calculations/getCalculationsList',
-  async (filters?: { status?: string; formed_from?: string; formed_to?: string; page?: number; limit?: number }, { rejectWithValue, getState }) => {
+  async (filters?: { status?: string; formed_from?: string; formed_to?: string; page?: number; limit?: number; silent?: boolean }, { rejectWithValue, getState }) => {
     try {
-      // Получаем токен из Redux state
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -73,19 +72,18 @@ export const getCalculationsList = createAsyncThunk(
 
       const response = await axios.get(`/calculations?${params.toString()}`);
 
-      return response.data.data || response.data;
+      return { data: response.data.data || response.data, silent: filters?.silent || false };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке заявок');
     }
   }
 );
 
-// Получение информации о корзине
+
 export const getCartInfo = createAsyncThunk(
   'calculations/getCartInfo',
   async (_, { rejectWithValue, getState }) => {
     try {
-      // Получаем токен из Redux state
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -96,18 +94,18 @@ export const getCartInfo = createAsyncThunk(
 
       return response.data;
     } catch (error: any) {
-      // Если ошибка авторизации, возвращаем пустую корзину
+
       return { calculation_id: null, item_count: 0 };
     }
   }
 );
 
-// Получение заявки по ID
+
 export const getCalculationById = createAsyncThunk(
   'calculations/getCalculationById',
   async (id: number, { rejectWithValue, getState }) => {
     try {
-      // Получаем токен из Redux state
+
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -123,12 +121,12 @@ export const getCalculationById = createAsyncThunk(
   }
 );
 
-// Получение материалов заявки
+
 export const getCalculationMaterials = createAsyncThunk(
   'calculations/getCalculationMaterials',
   async (calculationId: number, { rejectWithValue, getState }) => {
     try {
-      // Получаем токен из Redux state
+
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -144,12 +142,12 @@ export const getCalculationMaterials = createAsyncThunk(
   }
 );
 
-// Добавление материала в заявку
+
 export const addMaterialToCalculation = createAsyncThunk(
   'calculations/addMaterialToCalculation',
   async (materialId: number, { rejectWithValue, dispatch, getState }) => {
     try {
-      // Получаем токен из Redux state
+
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -158,7 +156,7 @@ export const addMaterialToCalculation = createAsyncThunk(
 
       const response = await axios.post(`/materials/${materialId}/add-to-cart`, {});
 
-      // Обновляем информацию о корзине после добавления
+
       if (response.data.calculation_id) {
         dispatch(getCartInfo());
       }
@@ -170,12 +168,11 @@ export const addMaterialToCalculation = createAsyncThunk(
   }
 );
 
-// Удаление материала из заявки
 export const removeMaterialFromCalculation = createAsyncThunk(
   'calculations/removeMaterialFromCalculation',
   async ({ calculationId, materialId }: { calculationId: number; materialId: number }, { rejectWithValue, getState }) => {
     try {
-      // Получаем токен из Redux state
+
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -191,7 +188,6 @@ export const removeMaterialFromCalculation = createAsyncThunk(
   }
 );
 
-// Обновление материала в заявке
 export const updateMaterialInCalculation = createAsyncThunk(
   'calculations/updateMaterialInCalculation',
   async ({ calculationId, materialId, updates }: { calculationId: number; materialId: number; updates: { quantity?: number; comment?: string } }, { rejectWithValue, getState }) => {
@@ -254,6 +250,32 @@ export const deleteCalculation = createAsyncThunk(
   }
 );
 
+// Вызов асинхронного сервиса для расчета стоимости
+export const triggerAsyncCalculation = createAsyncThunk(
+  'calculations/triggerAsyncCalculation',
+  async (calculationId: number, { rejectWithValue }) => {
+    try {
+      // Вызываем Django асинхронный сервис напрямую
+      const response = await fetch('http://localhost:8000/calculate-cost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ calculation_id: calculationId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при вызове асинхронного сервиса');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Ошибка при вызове асинхронного сервиса');
+    }
+  }
+);
+
 const calculationsSlice = createSlice({
   name: 'calculations',
   initialState,
@@ -275,17 +297,54 @@ const calculationsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Get Calculations List
-      .addCase(getCalculationsList.pending, (state) => {
-        state.loading = true;
+      .addCase(getCalculationsList.pending, (state, action) => {
+        // Не показываем loading при тихом обновлении (silent polling)
+        if (!(action.meta.arg as any)?.silent) {
+          state.loading = true;
+        }
         state.error = null;
       })
       .addCase(getCalculationsList.fulfilled, (state, action) => {
         state.loading = false;
-        state.calculations = action.payload;
+        // Обрабатываем payload - может быть объект с data и silent, или просто массив
+        const payload = action.payload as any;
+        const isSilent = payload?.silent || (action.meta.arg as any)?.silent;
+        const newData = payload?.data || payload;
+        
+        // Проверяем, изменились ли данные перед обновлением (только для silent обновлений)
+        if (isSilent && Array.isArray(newData) && Array.isArray(state.calculations)) {
+          // Сравниваем только по ID и total_cost для оптимизации (избегаем полного пересоздания массива)
+          const currentMap = new Map(state.calculations.map(c => [c.id, c.total_cost]));
+          const newMap = new Map(newData.map((c: any) => [c.id, c.total_cost]));
+          
+          // Проверяем, есть ли изменения в total_cost
+          let dataChanged = false;
+          for (const [id, totalCost] of newMap) {
+            if (currentMap.get(id) !== totalCost) {
+              dataChanged = true;
+              break;
+            }
+          }
+          
+          // Также проверяем, не появились ли новые заявки
+          if (!dataChanged && newMap.size !== currentMap.size) {
+            dataChanged = true;
+          }
+          
+          if (dataChanged) {
+            state.calculations = newData;
+          }
+        } else {
+          // Для обычных обновлений всегда обновляем
+          state.calculations = newData;
+        }
       })
       .addCase(getCalculationsList.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
+        // Не показываем ошибку при тихом обновлении
+        if (!(action.meta.arg as any)?.silent) {
+          state.loading = false;
+          state.error = action.payload as string;
+        }
       })
       // Get Cart Info
       .addCase(getCartInfo.fulfilled, (state, action) => {
@@ -355,6 +414,19 @@ const calculationsSlice = createSlice({
           state.cartInfo.calculation_id = null;
           state.cartInfo.item_count = 0;
         }
+      })
+      // Trigger Async Calculation
+      .addCase(triggerAsyncCalculation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(triggerAsyncCalculation.fulfilled, (state) => {
+        state.loading = false;
+        // Сообщение об успешном запуске будет показано в UI
+      })
+      .addCase(triggerAsyncCalculation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });

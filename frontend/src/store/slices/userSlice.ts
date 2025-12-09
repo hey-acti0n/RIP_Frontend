@@ -30,7 +30,7 @@ export const loginUserAsync = createAsyncThunk(
       const token = response.data.token || response.data.access_token;
       
       if (token) {
-        // Не сохраняем токен в localStorage, чтобы при обновлении страницы пользователь выходил
+
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
       
@@ -63,7 +63,7 @@ export const registerUserAsync = createAsyncThunk(
   }
 );
 
-// Асинхронное действие для деавторизации
+
 export const logoutUserAsync = createAsyncThunk(
   'user/logoutUserAsync',
   async (_, { rejectWithValue }) => {
@@ -73,7 +73,6 @@ export const logoutUserAsync = createAsyncThunk(
       delete axios.defaults.headers.common['Authorization'];
       return {};
     } catch (error: any) {
-      // Даже если запрос не удался, очищаем локальное хранилище
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
       return {};
@@ -86,7 +85,7 @@ export const getProfileAsync = createAsyncThunk(
   'user/getProfileAsync',
   async (_, { rejectWithValue, getState }) => {
     try {
-      // Получаем токен из состояния Redux, а не из localStorage
+
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -107,7 +106,7 @@ export const getProfileAsync = createAsyncThunk(
   }
 );
 
-// Обновление профиля пользователя
+
 export const updateProfileAsync = createAsyncThunk(
   'user/updateProfileAsync',
   async (profileData: { email?: string; full_name?: string }, { rejectWithValue }) => {

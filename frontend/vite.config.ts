@@ -62,7 +62,7 @@ export default defineConfig({
     // },
     proxy: {
       "/api": {
-        target: "https://localhost:8080",
+        target: "http://localhost:8080",
         changeOrigin: true,
         secure: false, // Игнорировать ошибки самоподписанного сертификата
         // Не переписываем путь, так как бэкенд ожидает /api/v1/...

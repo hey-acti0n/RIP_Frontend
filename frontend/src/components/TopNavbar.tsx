@@ -15,7 +15,7 @@ const TopNavbar: React.FC = () => {
   const { isAuthenticated, username, fullName } = useSelector((state: RootState) => state.user);
   
   // Определяем активную ссылку
-  const isMaterialsActive = location.pathname === '/' || location.pathname.startsWith('/materials');
+  const isMaterialsActive = location.pathname === '/materials' || location.pathname.startsWith('/materials/');
   const isCalcActive = location.pathname === '/cart';
   const isCalculationsActive = location.pathname.startsWith('/calculations') && !location.pathname.match(/^\/calculations\/\d+$/);
   const isProfileActive = location.pathname === '/profile';
@@ -32,7 +32,7 @@ const TopNavbar: React.FC = () => {
     <nav className="top-navbar">
       <div className="navbar-container">
         <Link 
-          to="/" 
+          to="/materials" 
           className={`nav-link ${isMaterialsActive ? 'active' : ''}`}
         >
           Каталог материалов
