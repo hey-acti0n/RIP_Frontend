@@ -10,12 +10,12 @@ import type { Material } from './types/api';
 import { useFilters, updateFilterAction, resetFiltersAction } from './store/slices/filtersSlice';
 import type { AppDispatch, RootState } from './store/types';
 import { 
-  addMaterialToCalculation, 
-  getCartInfo, 
-  formCalculation as formCalculationAction, 
-  deleteCalculation,
-  removeMaterialFromCalculation,
-  updateMaterialInCalculation
+  addMaterialToCalcIsolation, 
+  getIsolationCartInfo, 
+  formCalcIsolation as formCalcIsolationAction, 
+  deleteCalcIsolation,
+  removeMaterialFromCalcIsolation,
+  updateMaterialInCalcIsolation
 } from './store/slices/calculationsSlice';
 import { getDestRoot, dest_img, dest_api } from './config/target_config';
 import HomePage from './pages/HomePage';
@@ -268,11 +268,11 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const removeFromCart = async (materialId: number) => {
     try {
       if (isAuthenticated && cartInfo.calculation_id) {
-        await dispatch(removeMaterialFromCalculation({
+        await dispatch(removeMaterialFromCalcIsolation({
           calculationId: cartInfo.calculation_id,
           materialId
         }));
-        // Redux обновляется автоматически через removeMaterialFromCalculation.fulfilled
+        // Redux обновляется автоматически через removeMaterialFromCalcIsolation.fulfilled
       }
       
       setCart(prevCart => {
@@ -290,9 +290,9 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (quantity <= 0) {
         await removeFromCart(materialId);
       } else {
-        // Для авторизованных пользователей отправляем изменение в бэкенд через Redux
+
         if (isAuthenticated && cartInfo.calculation_id) {
-          await dispatch(updateMaterialInCalculation({
+          await dispatch(updateMaterialInCalcIsolation({
             calculationId: cartInfo.calculation_id,
             materialId,
             updates: { quantity }
@@ -317,9 +317,9 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const updateComment = async (materialId: number, comment: string) => {
     try {
-      // Для авторизованных пользователей отправляем изменение в бэкенд через Redux
+
       if (isAuthenticated && cartInfo.calculation_id) {
-        await dispatch(updateMaterialInCalculation({
+        await dispatch(updateMaterialInCalcIsolation({
           calculationId: cartInfo.calculation_id,
           materialId,
           updates: { comment }
@@ -658,14 +658,14 @@ const CartPage: React.FC = () => {
     try {
       // Для авторизованных пользователей используем Redux action (отправляет в бэкенд)
       if (isAuthenticated && cartInfo.calculation_id) {
-        const result = await dispatch(formCalculationAction({
+        const result = await dispatch(formCalcIsolationAction({
           calculationId: cartInfo.calculation_id,
           data: {
             installation_weight: parseFloat(mass),
             natural_frequency: parseFloat(frequency)
           }
         }));
-        if (formCalculationAction.fulfilled.match(result)) {
+        if (formCalcIsolationAction.fulfilled.match(result)) {
           setResults(result.payload.calculation_results || []);
           alert('Рассчёт успешно сформирован! Статус изменен на "завершён".');
         } else {
@@ -686,11 +686,10 @@ const CartPage: React.FC = () => {
 
   const handleClearCart = async () => {
     if (window.confirm('Вы уверены, что хотите очистить корзину?')) {
-      // Для авторизованных пользователей меняем статус заявки на "rejected" в бэкенде
       if (isAuthenticated && cartInfo.calculation_id) {
         try {
-          await dispatch(deleteCalculation(cartInfo.calculation_id));
-          // Redux обновляется автоматически через deleteCalculation.fulfilled
+          await dispatch(deleteCalcIsolation(cartInfo.calculation_id));
+
         } catch (error) {
           console.error('Error clearing cart:', error);
         }

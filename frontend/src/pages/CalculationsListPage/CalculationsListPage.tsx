@@ -3,7 +3,7 @@ import { Container, Table, Spinner, Alert, Form, Row, Col, Button } from 'react-
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../../store/types';
-import { getCalculationsList, triggerAsyncCalculation } from '../../store/slices/calculationsSlice';
+import { getCalcIsolationList, triggerAsyncCalcIsolation } from '../../store/slices/calculationsSlice';
 import { getDestRoot } from '../../config/target_config';
 import './CalculationsListPage.css';
 
@@ -15,15 +15,16 @@ const CalculationsListPage: React.FC = () => {
     
     const [dateFrom, setDateFrom] = useState<string>('');
     const [dateTo, setDateTo] = useState<string>('');
+    const [statusFilter, setStatusFilter] = useState<string>('completed'); // По умолчанию "Завершённые"
 
     useEffect(() => {
         if (!isAuthenticated) {
             navigate('/login');
             return;
         }
-        // Загружаем только рассчёты со статусом "completed" (Завершён)
-        dispatch(getCalculationsList({ status: 'completed' }));
-    }, [dispatch, navigate, isAuthenticated]);
+        // Загружаем рассчёты с выбранным статусом
+        dispatch(getCalcIsolationList({ status: statusFilter }));
+    }, [dispatch, navigate, isAuthenticated, statusFilter]);
 
     // Short Polling: автоматическое обновление списка заявок каждые 10 секунд
     useEffect(() => {
@@ -32,7 +33,7 @@ const CalculationsListPage: React.FC = () => {
         }
 
         const fetchCalculations = () => {
-            const filters: any = { status: 'completed', silent: true }; // silent: true для тихого обновления
+            const filters: any = { status: statusFilter, silent: true }; // silent: true для тихого обновления
             if (dateFrom) {
                 filters.formed_from = dateFrom;
             }
@@ -40,7 +41,7 @@ const CalculationsListPage: React.FC = () => {
                 filters.formed_to = dateTo;
             }
             // Используем silent обновление без показа loading состояния
-            dispatch(getCalculationsList(filters));
+            dispatch(getCalcIsolationList(filters));
         };
 
         // Устанавливаем интервал для периодического обновления
@@ -48,28 +49,29 @@ const CalculationsListPage: React.FC = () => {
 
         // Очищаем интервал при размонтировании компонента
         return () => clearInterval(intervalId);
-    }, [dispatch, isAuthenticated, dateFrom, dateTo]);
+    }, [dispatch, isAuthenticated, dateFrom, dateTo, statusFilter]);
 
     const handleFilter = (e: React.FormEvent) => {
         e.preventDefault();
-        const filters: any = { status: 'completed' };
+        const filters: any = { status: statusFilter };
         if (dateFrom) {
             filters.formed_from = dateFrom;
         }
         if (dateTo) {
             filters.formed_to = dateTo;
         }
-        dispatch(getCalculationsList(filters));
+        dispatch(getCalcIsolationList(filters));
     };
 
     const handleReset = () => {
         setDateFrom('');
         setDateTo('');
-        dispatch(getCalculationsList({ status: 'completed' }));
+        setStatusFilter('completed');
+        dispatch(getCalcIsolationList({ status: 'completed' }));
     };
 
     const handleTriggerAsyncCalculation = (calculationId: number) => {
-        dispatch(triggerAsyncCalculation(calculationId));
+        dispatch(triggerAsyncCalcIsolation(calculationId));
     };
 
   const getStatusBadge = (status: string) => {
@@ -154,7 +156,7 @@ const CalculationsListPage: React.FC = () => {
             <Container style={{ maxWidth: '1200px', marginTop: '50px' }}>
                 <h1 style={{ textAlign: 'center', marginBottom: '30px', color: 'white' }}>Мои рассчёты</h1>
                 
-                {/* Фильтры по датам */}
+                {/* Фильтры по датам и статусу */}
                 <div style={{ 
                     backgroundColor: 'rgba(255, 255, 255, 0.1)', 
                     padding: '20px', 
@@ -163,6 +165,19 @@ const CalculationsListPage: React.FC = () => {
                 }}>
                     <Form onSubmit={handleFilter}>
                         <Row className="g-3 align-items-end">
+                            <Col md={3}>
+                                <Form.Group>
+                                    <Form.Label style={{ color: 'white' }}>Статус</Form.Label>
+                                    <Form.Select
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
+                                    >
+                                        <option value="completed">Завершённые</option>
+                                        <option value="formed">Сформированные</option>
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
                             <Col md={3}>
                                 <Form.Group>
                                     <Form.Label style={{ color: 'white' }}>Дата от</Form.Label>
@@ -194,14 +209,16 @@ const CalculationsListPage: React.FC = () => {
                                     Применить фильтр
                                 </Button>
                             </Col>
-                            <Col md={3}>
+                        </Row>
+                        <Row className="g-3 mt-2">
+                            <Col md={12}>
                                 <Button 
                                     type="button" 
                                     variant="secondary" 
                                     onClick={handleReset}
                                     style={{ width: '100%' }}
                                 >
-                                    Сбросить
+                                    Сбросить фильтры
                                 </Button>
                             </Col>
                         </Row>

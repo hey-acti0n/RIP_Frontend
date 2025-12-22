@@ -53,8 +53,8 @@ const initialState: CalculationsState = {
 };
 
 
-export const getCalculationsList = createAsyncThunk(
-  'calculations/getCalculationsList',
+export const getCalcIsolationList = createAsyncThunk(
+  'calc_isolation/getCalcIsolationList',
   async (filters?: { status?: string; formed_from?: string; formed_to?: string; page?: number; limit?: number; silent?: boolean }, { rejectWithValue, getState }) => {
     try {
       const state = getState() as any;
@@ -80,8 +80,8 @@ export const getCalculationsList = createAsyncThunk(
 );
 
 
-export const getCartInfo = createAsyncThunk(
-  'calculations/getCartInfo',
+export const getIsolationCartInfo = createAsyncThunk(
+  'calc_isolation/getIsolationCartInfo',
   async (_, { rejectWithValue, getState }) => {
     try {
       const state = getState() as any;
@@ -101,8 +101,8 @@ export const getCartInfo = createAsyncThunk(
 );
 
 
-export const getCalculationById = createAsyncThunk(
-  'calculations/getCalculationById',
+export const getCalcIsolationById = createAsyncThunk(
+  'calc_isolation/getCalcIsolationById',
   async (id: number, { rejectWithValue, getState }) => {
     try {
 
@@ -122,8 +122,8 @@ export const getCalculationById = createAsyncThunk(
 );
 
 
-export const getCalculationMaterials = createAsyncThunk(
-  'calculations/getCalculationMaterials',
+export const getCalcIsolationMaterials = createAsyncThunk(
+  'calc_isolation/getCalcIsolationMaterials',
   async (calculationId: number, { rejectWithValue, getState }) => {
     try {
 
@@ -143,8 +143,8 @@ export const getCalculationMaterials = createAsyncThunk(
 );
 
 
-export const addMaterialToCalculation = createAsyncThunk(
-  'calculations/addMaterialToCalculation',
+export const addMaterialToCalcIsolation = createAsyncThunk(
+  'calc_isolation/addMaterialToCalcIsolation',
   async (materialId: number, { rejectWithValue, dispatch, getState }) => {
     try {
 
@@ -156,7 +156,7 @@ export const addMaterialToCalculation = createAsyncThunk(
 
       const response = await axios.post(`/materials/${materialId}/add-to-cart`, {});
 
-      // cartInfo обновится автоматически через addMaterialToCalculation.fulfilled
+      // cartInfo обновится автоматически через addMaterialToCalcIsolation.fulfilled
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка при добавлении материала');
@@ -164,8 +164,8 @@ export const addMaterialToCalculation = createAsyncThunk(
   }
 );
 
-export const removeMaterialFromCalculation = createAsyncThunk(
-  'calculations/removeMaterialFromCalculation',
+export const removeMaterialFromCalcIsolation = createAsyncThunk(
+  'calc_isolation/removeMaterialFromCalcIsolation',
   async ({ calculationId, materialId }: { calculationId: number; materialId: number }, { rejectWithValue, getState }) => {
     try {
 
@@ -184,11 +184,10 @@ export const removeMaterialFromCalculation = createAsyncThunk(
   }
 );
 
-export const updateMaterialInCalculation = createAsyncThunk(
-  'calculations/updateMaterialInCalculation',
+export const updateMaterialInCalcIsolation = createAsyncThunk(
+  'calc_isolation/updateMaterialInCalcIsolation',
   async ({ calculationId, materialId, updates }: { calculationId: number; materialId: number; updates: { quantity?: number; comment?: string } }, { rejectWithValue, getState }) => {
     try {
-      // Получаем токен из Redux state
       const state = getState() as any;
       const token = state.user?.token;
       if (!token) {
@@ -204,9 +203,9 @@ export const updateMaterialInCalculation = createAsyncThunk(
   }
 );
 
-// Формирование заявки (подтверждение)
-export const formCalculation = createAsyncThunk(
-  'calculations/formCalculation',
+
+export const formCalcIsolation = createAsyncThunk(
+  'calc_isolation/formCalcIsolation',
   async ({ calculationId, data }: { calculationId: number; data: { installation_weight: number; natural_frequency: number } }, { rejectWithValue, getState }) => {
     try {
       // Получаем токен из Redux state
@@ -225,9 +224,9 @@ export const formCalculation = createAsyncThunk(
   }
 );
 
-// Удаление заявки
-export const deleteCalculation = createAsyncThunk(
-  'calculations/deleteCalculation',
+
+export const deleteCalcIsolation = createAsyncThunk(
+  'calc_isolation/deleteCalcIsolation',
   async (calculationId: number, { rejectWithValue, getState }) => {
     try {
       // Получаем токен из Redux state
@@ -247,8 +246,8 @@ export const deleteCalculation = createAsyncThunk(
 );
 
 // Вызов асинхронного сервиса для расчета стоимости
-export const triggerAsyncCalculation = createAsyncThunk(
-  'calculations/triggerAsyncCalculation',
+export const triggerAsyncCalcIsolation = createAsyncThunk(
+  'calc_isolation/triggerAsyncCalcIsolation',
   async (calculationId: number, { rejectWithValue }) => {
     try {
       // Вызываем Django асинхронный сервис напрямую
@@ -293,14 +292,14 @@ const calculationsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Get Calculations List
-      .addCase(getCalculationsList.pending, (state, action) => {
+      .addCase(getCalcIsolationList.pending, (state, action) => {
         // Не показываем loading при тихом обновлении (silent polling)
         if (!(action.meta.arg as any)?.silent) {
           state.loading = true;
         }
         state.error = null;
       })
-      .addCase(getCalculationsList.fulfilled, (state, action) => {
+      .addCase(getCalcIsolationList.fulfilled, (state, action) => {
         state.loading = false;
         // Обрабатываем payload - может быть объект с data и silent, или просто массив
         const payload = action.payload as any;
@@ -335,7 +334,7 @@ const calculationsSlice = createSlice({
           state.calculations = newData;
         }
       })
-      .addCase(getCalculationsList.rejected, (state, action) => {
+      .addCase(getCalcIsolationList.rejected, (state, action) => {
         // Не показываем ошибку при тихом обновлении
         if (!(action.meta.arg as any)?.silent) {
           state.loading = false;
@@ -343,33 +342,33 @@ const calculationsSlice = createSlice({
         }
       })
       // Get Cart Info
-      .addCase(getCartInfo.fulfilled, (state, action) => {
+      .addCase(getIsolationCartInfo.fulfilled, (state, action) => {
         state.cartInfo = {
           calculation_id: action.payload.calculation_id || action.payload.calculationId || null,
           item_count: action.payload.item_count || action.payload.itemCount || 0,
         };
       })
       // Get Calculation By Id
-      .addCase(getCalculationById.fulfilled, (state, action) => {
+      .addCase(getCalcIsolationById.fulfilled, (state, action) => {
         state.currentCalculation = action.payload;
       })
       // Get Calculation Materials
-      .addCase(getCalculationMaterials.fulfilled, (state, action) => {
+      .addCase(getCalcIsolationMaterials.fulfilled, (state, action) => {
         state.calculationMaterials = action.payload;
       })
       // Add Material To Calculation
-      .addCase(addMaterialToCalculation.fulfilled, (state, action) => {
+      .addCase(addMaterialToCalcIsolation.fulfilled, (state, action) => {
         if (action.payload.calculation_id) {
           state.cartInfo.calculation_id = action.payload.calculation_id;
           // Увеличиваем счетчик товаров
           state.cartInfo.item_count += 1;
         }
       })
-      .addCase(addMaterialToCalculation.rejected, (state) => {
+      .addCase(addMaterialToCalcIsolation.rejected, (state) => {
         // Ошибка при добавлении - не меняем состояние
       })
       // Remove Material From Calculation
-      .addCase(removeMaterialFromCalculation.fulfilled, (state, action) => {
+      .addCase(removeMaterialFromCalcIsolation.fulfilled, (state, action) => {
         state.calculationMaterials = state.calculationMaterials.filter(
           (item) => item.material_id !== action.payload.materialId
         );
@@ -383,7 +382,7 @@ const calculationsSlice = createSlice({
         }
       })
       // Form Calculation
-      .addCase(formCalculation.fulfilled, (state, action) => {
+      .addCase(formCalcIsolation.fulfilled, (state, action) => {
         // Обновляем статус текущей заявки на "completed"
         if (state.currentCalculation) {
           state.currentCalculation.status = action.payload.status || 'completed';
@@ -400,7 +399,7 @@ const calculationsSlice = createSlice({
         }
       })
       // Delete Calculation
-      .addCase(deleteCalculation.fulfilled, (state, action) => {
+      .addCase(deleteCalcIsolation.fulfilled, (state, action) => {
         state.calculations = state.calculations.filter((calc) => calc.id !== action.payload);
         if (state.currentCalculation?.id === action.payload) {
           state.currentCalculation = null;
@@ -412,15 +411,15 @@ const calculationsSlice = createSlice({
         }
       })
       // Trigger Async Calculation
-      .addCase(triggerAsyncCalculation.pending, (state) => {
+      .addCase(triggerAsyncCalcIsolation.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(triggerAsyncCalculation.fulfilled, (state) => {
+      .addCase(triggerAsyncCalcIsolation.fulfilled, (state) => {
         state.loading = false;
         // Сообщение об успешном запуске будет показано в UI
       })
-      .addCase(triggerAsyncCalculation.rejected, (state, action) => {
+      .addCase(triggerAsyncCalcIsolation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

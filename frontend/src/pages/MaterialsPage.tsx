@@ -5,8 +5,8 @@ import type { Material } from '../types/api';
 import { useFilters, updateFilterAction, resetFiltersAction } from '../store/slices/filtersSlice';
 import type { AppDispatch, RootState } from '../store/types';
 import { 
-  addMaterialToCalculation, 
-  getCartInfo
+  addMaterialToCalcIsolation, 
+  getIsolationCartInfo
 } from '../store/slices/calculationsSlice';
 import { apiService } from '../services/api';
 import { getDestRoot, dest_img } from '../config/target_config';
@@ -255,9 +255,9 @@ const MaterialsPage: React.FC = () => {
                         onClick={async () => {
                           setAddingMaterialId(material.id);
                           try {
-                            const result = await dispatch(addMaterialToCalculation(material.id));
-                            if (addMaterialToCalculation.fulfilled.match(result)) {
-                              // Redux обновляется автоматически через addMaterialToCalculation.fulfilled
+                            const result = await dispatch(addMaterialToCalcIsolation(material.id));
+                            if (addMaterialToCalcIsolation.fulfilled.match(result)) {
+                              // Redux обновляется автоматически через addMaterialToCalcIsolation.fulfilled
                               // Корзина обновится через useEffect при изменении calculation_id
                             } else {
                               alert('Ошибка при добавлении материала');

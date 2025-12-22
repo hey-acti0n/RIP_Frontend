@@ -130,6 +130,18 @@ const userSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    logout: (state) => {
+      // Очищаем состояние при выходе
+      state.username = '';
+      state.fullName = '';
+      state.email = '';
+      state.isAuthenticated = false;
+      state.token = null;
+      state.error = null;
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('session_active');
+      delete axios.defaults.headers.common['Authorization'];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -146,6 +158,12 @@ const userSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
+        // Сохраняем токен в localStorage
+        if (action.payload.token) {
+          localStorage.setItem('token', action.payload.token);
+          // Устанавливаем флаг активной сессии в sessionStorage
+          sessionStorage.setItem('session_active', 'true');
+        }
       })
       .addCase(loginUserAsync.rejected, (state, action) => {
         state.loading = false;
@@ -176,6 +194,9 @@ const userSlice = createSlice({
         state.isAuthenticated = false;
         state.token = null;
         state.error = null;
+        // Очищаем токен из localStorage и флаг сессии
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('session_active');
       })
       .addCase(logoutUserAsync.rejected, (state, action) => {
         state.error = action.payload as string;
@@ -185,6 +206,9 @@ const userSlice = createSlice({
         state.email = '';
         state.isAuthenticated = false;
         state.token = null;
+        // Очищаем токен из localStorage и флаг сессии
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('session_active');
       })
       // Get Profile
       .addCase(getProfileAsync.fulfilled, (state, action) => {
@@ -201,6 +225,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearError } = userSlice.actions;
+export const { clearError, logout } = userSlice.actions;
 export default userSlice.reducer;
 

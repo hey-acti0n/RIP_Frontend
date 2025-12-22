@@ -5,11 +5,29 @@ import { registerSW } from "virtual:pwa-register"
 import './index.css'
 import App from './App.tsx'
 import store from "./store/store"
-import { getProfileAsync } from "./store/slices/userSlice"
+import { getProfileAsync, logout } from "./store/slices/userSlice"
 import { setupAxiosInterceptors } from './api/axiosConfig'
 
-// Очищаем токен при обновлении страницы, чтобы пользователь выходил из аккаунта
-localStorage.removeItem('token');
+// Проверяем, было ли обновление страницы (F5)
+// Используем комбинацию sessionStorage и Performance API
+const navigationType = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+const isPageReload = navigationType?.type === 'reload' || sessionStorage.getItem('page_reload') === 'true';
+
+if (isPageReload) {
+  // Это обновление страницы (F5) - очищаем токен и выходим из аккаунта
+  localStorage.removeItem('token');
+  sessionStorage.removeItem('page_reload');
+  sessionStorage.removeItem('session_active');
+  store.dispatch(logout());
+} else {
+  // Это первая загрузка или новая вкладка - устанавливаем флаг для следующего обновления
+  sessionStorage.setItem('page_reload', 'true');
+  
+  // Обработчик события beforeunload для установки флага при обновлении страницы
+  window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem('page_reload', 'true');
+  });
+}
 
 // Настраиваем axios interceptor после создания store
 setupAxiosInterceptors(store);

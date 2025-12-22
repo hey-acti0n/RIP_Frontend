@@ -4,14 +4,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../../store/types';
 import {
-    getCalculationById,
-    getCalculationMaterials,
-    removeMaterialFromCalculation,
-    updateMaterialInCalculation,
-    formCalculation,
-    deleteCalculation,
+    getCalcIsolationById,
+    getCalcIsolationMaterials,
+    removeMaterialFromCalcIsolation,
+    updateMaterialInCalcIsolation,
+    formCalcIsolation,
+    deleteCalcIsolation,
     clearCurrentCalculation,
-    getCartInfo
+    getIsolationCartInfo
 } from '../../store/slices/calculationsSlice';
 import { getDestRoot, dest_img } from '../../config/target_config';
 import './CalculationPage.css';
@@ -35,8 +35,8 @@ const CalculationPage: React.FC = () => {
             return;
         }
         if (id) {
-            dispatch(getCalculationById(parseInt(id)));
-            dispatch(getCalculationMaterials(parseInt(id)));
+            dispatch(getCalcIsolationById(parseInt(id)));
+            dispatch(getCalcIsolationMaterials(parseInt(id)));
         }
         return () => {
             dispatch(clearCurrentCalculation());
@@ -59,23 +59,23 @@ const CalculationPage: React.FC = () => {
     const handleQuantityChange = async (materialId: number, newQuantity: number) => {
         if (!id || newQuantity < 1) return;
         setMaterialQuantities({ ...materialQuantities, [materialId]: newQuantity });
-        await dispatch(updateMaterialInCalculation({
+        await dispatch(updateMaterialInCalcIsolation({
             calculationId: parseInt(id),
             materialId,
             updates: { quantity: newQuantity }
         }));
-        dispatch(getCalculationMaterials(parseInt(id)));
+        dispatch(getCalcIsolationMaterials(parseInt(id)));
     };
 
     const handleRemoveMaterial = async (materialId: number) => {
         if (!id) return;
         if (window.confirm('Вы уверены, что хотите удалить этот материал из рассчёта?')) {
-            await dispatch(removeMaterialFromCalculation({
+            await dispatch(removeMaterialFromCalcIsolation({
                 calculationId: parseInt(id),
                 materialId
             }));
             // Обновляем материалы (Redux обновляет cartInfo автоматически)
-            dispatch(getCalculationMaterials(parseInt(id)));
+            dispatch(getCalcIsolationMaterials(parseInt(id)));
         }
     };
 
@@ -85,17 +85,17 @@ const CalculationPage: React.FC = () => {
             alert('Заполните все поля');
             return;
         }
-        const result = await dispatch(formCalculation({
+        const result = await dispatch(formCalcIsolation({
             calculationId: parseInt(id),
             data: {
                 installation_weight: parseFloat(formData.installation_weight),
                 natural_frequency: parseFloat(formData.natural_frequency)
             }
         }));
-        if (formCalculation.fulfilled.match(result)) {
+        if (formCalcIsolation.fulfilled.match(result)) {
             // Обновляем заявку и материалы (Redux обновляет cartInfo автоматически)
-            dispatch(getCalculationById(parseInt(id)));
-            dispatch(getCalculationMaterials(parseInt(id)));
+            dispatch(getCalcIsolationById(parseInt(id)));
+            dispatch(getCalcIsolationMaterials(parseInt(id)));
             alert('Рассчёт успешно сформирован!');
         }
     };
@@ -103,9 +103,9 @@ const CalculationPage: React.FC = () => {
     const handleDeleteCalculation = async () => {
         if (!id) return;
         if (window.confirm('Вы уверены, что хотите удалить этот рассчёт?')) {
-            const result = await dispatch(deleteCalculation(parseInt(id)));
-            if (deleteCalculation.fulfilled.match(result)) {
-                // Redux обновляет cartInfo автоматически через deleteCalculation.fulfilled
+            const result = await dispatch(deleteCalcIsolation(parseInt(id)));
+            if (deleteCalcIsolation.fulfilled.match(result)) {
+                // Redux обновляет cartInfo автоматически через deleteCalcIsolation.fulfilled
                 navigate('/calculations');
             }
         }
