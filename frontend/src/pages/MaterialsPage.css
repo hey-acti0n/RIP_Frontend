@@ -5,6 +5,33 @@
   margin-bottom: 40px;
 }
 
+.clip-search-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.preview-image {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #dee2e6;
+}
+
+.placeholder-image {
+  width: 150px;
+  height: 150px;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #adb5bd;
+  border: 2px dashed #dee2e6;
+}
+
 .pagination {
   display: flex;
   justify-content: center;

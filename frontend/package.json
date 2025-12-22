@@ -12,6 +12,7 @@
     "generate-api": "node scripts/generate-api.mjs"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@reduxjs/toolkit": "^2.10.1",
     "@types/react-router-dom": "^5.3.3",
     "bootstrap": "^5.3.8",
