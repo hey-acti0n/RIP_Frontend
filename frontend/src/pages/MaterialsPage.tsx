@@ -257,9 +257,8 @@ const MaterialsPage: React.FC = () => {
                           try {
                             const result = await dispatch(addMaterialToCalculation(material.id));
                             if (addMaterialToCalculation.fulfilled.match(result)) {
-                              await dispatch(getCartInfo());
-                              console.log('Reloading cart after adding material');
-                              await loadCartFromDB();
+                              // Redux обновляется автоматически через addMaterialToCalculation.fulfilled
+                              // Корзина обновится через useEffect при изменении calculation_id
                             } else {
                               alert('Ошибка при добавлении материала');
                             }

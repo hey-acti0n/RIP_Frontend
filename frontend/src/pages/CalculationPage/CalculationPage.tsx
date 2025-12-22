@@ -74,9 +74,8 @@ const CalculationPage: React.FC = () => {
                 calculationId: parseInt(id),
                 materialId
             }));
-            // Обновляем материалы и информацию о корзине
+            // Обновляем материалы (Redux обновляет cartInfo автоматически)
             dispatch(getCalculationMaterials(parseInt(id)));
-            dispatch(getCartInfo());
         }
     };
 
@@ -94,11 +93,9 @@ const CalculationPage: React.FC = () => {
             }
         }));
         if (formCalculation.fulfilled.match(result)) {
-            // Обновляем заявку и материалы
+            // Обновляем заявку и материалы (Redux обновляет cartInfo автоматически)
             dispatch(getCalculationById(parseInt(id)));
             dispatch(getCalculationMaterials(parseInt(id)));
-            // Обновляем информацию о корзине (рассчёт больше не черновик)
-            dispatch(getCartInfo());
             alert('Рассчёт успешно сформирован!');
         }
     };
@@ -108,8 +105,7 @@ const CalculationPage: React.FC = () => {
         if (window.confirm('Вы уверены, что хотите удалить этот рассчёт?')) {
             const result = await dispatch(deleteCalculation(parseInt(id)));
             if (deleteCalculation.fulfilled.match(result)) {
-                // Обновляем информацию о корзине после удаления
-                dispatch(getCartInfo());
+                // Redux обновляет cartInfo автоматически через deleteCalculation.fulfilled
                 navigate('/calculations');
             }
         }

@@ -156,11 +156,7 @@ export const addMaterialToCalculation = createAsyncThunk(
 
       const response = await axios.post(`/materials/${materialId}/add-to-cart`, {});
 
-
-      if (response.data.calculation_id) {
-        dispatch(getCartInfo());
-      }
-
+      // cartInfo обновится автоматически через addMaterialToCalculation.fulfilled
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка при добавлении материала');

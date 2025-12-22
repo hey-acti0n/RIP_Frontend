@@ -77,7 +77,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
   }, [isAuthenticated]);
 
-  // Синхронизируем корзину с Redux state при изменении cartInfo
+  // Синхронизируем корзину с Redux state только при изменении calculation_id
   React.useEffect(() => {
     if (!isAuthenticated) return;
     
@@ -90,16 +90,8 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       setCart([]);
       setComments({});
       setCalculationId(null);
-    } else if (cartInfo.calculation_id === calculationId && cartInfo.item_count > 0 && cart.length === 0) {
-      // Если есть calculation_id, но корзина пуста, загружаем заново
-      console.log('Cart is empty but calculation_id exists, reloading cart');
-      loadCartFromDB();
-    } else if (cartInfo.calculation_id === calculationId && cartInfo.item_count !== cart.reduce((sum, item) => sum + item.quantity, 0)) {
-      // Если количество товаров не совпадает, перезагружаем корзину
-      console.log('Item count mismatch, reloading cart. Redux:', cartInfo.item_count, 'Local:', cart.reduce((sum, item) => sum + item.quantity, 0));
-      loadCartFromDB();
     }
-  }, [cartInfo.calculation_id, cartInfo.item_count, isAuthenticated, calculationId, cart.length]);
+  }, [cartInfo.calculation_id, isAuthenticated, calculationId]);
 
   const loadCartFromDB = async () => {
     console.log('loadCartFromDB called');
@@ -118,15 +110,17 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     console.log('Using real API, dest_api:', dest_api, 'isDev:', isDev);
     
     try {
-
-      let currentCartInfo = cartInfo;
+      // Используем cartInfo из Redux, не делаем дополнительных запросов
+      const currentCartInfo = cartInfo;
       console.log('Current cartInfo from Redux:', currentCartInfo);
+      
+      // Если нет calculation_id в Redux, значит корзина пуста
       if (!currentCartInfo.calculation_id) {
-        console.log('No calculation_id in Redux, fetching from API');
-        currentCartInfo = await apiService.getCartInfo();
-        console.log('CartInfo from API:', currentCartInfo);
-
-        await dispatch(getCartInfo());
+        console.log('No calculation_id in Redux, clearing cart');
+        setCart([]);
+        setComments({});
+        setCalculationId(null);
+        return;
       }
       
       setCalculationId(currentCartInfo.calculation_id);
@@ -273,17 +267,14 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const removeFromCart = async (materialId: number) => {
     try {
-
       if (isAuthenticated && cartInfo.calculation_id) {
         await dispatch(removeMaterialFromCalculation({
           calculationId: cartInfo.calculation_id,
           materialId
         }));
-
-        await dispatch(getCartInfo());
+        // Redux обновляется автоматически через removeMaterialFromCalculation.fulfilled
       }
       
-
       setCart(prevCart => {
         const newCart = prevCart.filter(item => item.material.id !== materialId);
         saveCartToStorage(newCart, calculationId, comments);
@@ -699,8 +690,7 @@ const CartPage: React.FC = () => {
       if (isAuthenticated && cartInfo.calculation_id) {
         try {
           await dispatch(deleteCalculation(cartInfo.calculation_id));
-          // После удаления обновляем информацию о корзине
-          await dispatch(getCartInfo());
+          // Redux обновляется автоматически через deleteCalculation.fulfilled
         } catch (error) {
           console.error('Error clearing cart:', error);
         }
