@@ -72,7 +72,14 @@ export const getCalcIsolationList = createAsyncThunk(
 
       const response = await axios.get(`/calculations?${params.toString()}`);
 
-      return { data: response.data.data || response.data, silent: filters?.silent || false };
+      // API возвращает объект с пагинацией: { data: [...], pagination: {...} }
+      // Нужно извлечь массив из response.data.data
+      const calculationsData = response.data?.data || response.data;
+      
+      // Убеждаемся, что это массив
+      const dataArray = Array.isArray(calculationsData) ? calculationsData : [];
+      
+      return { data: dataArray, silent: filters?.silent || false };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке заявок');
     }
@@ -156,7 +163,11 @@ export const addMaterialToCalcIsolation = createAsyncThunk(
 
       const response = await axios.post(`/materials/${materialId}/add-to-cart`, {});
 
-      // cartInfo обновится автоматически через addMaterialToCalcIsolation.fulfilled
+      // После успешного добавления обновляем информацию о корзине из БД
+      if (response.data.calculation_id) {
+        await dispatch(getIsolationCartInfo());
+      }
+
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка при добавлении материала');
@@ -304,7 +315,13 @@ const calculationsSlice = createSlice({
         // Обрабатываем payload - может быть объект с data и silent, или просто массив
         const payload = action.payload as any;
         const isSilent = payload?.silent || (action.meta.arg as any)?.silent;
-        const newData = payload?.data || payload;
+        let newData = payload?.data || payload;
+        
+        // Убеждаемся, что newData - это массив
+        if (!Array.isArray(newData)) {
+          console.warn('getCalcIsolationList.fulfilled: newData is not an array', newData);
+          newData = [];
+        }
         
         // Проверяем, изменились ли данные перед обновлением (только для silent обновлений)
         if (isSilent && Array.isArray(newData) && Array.isArray(state.calculations)) {
@@ -360,8 +377,7 @@ const calculationsSlice = createSlice({
       .addCase(addMaterialToCalcIsolation.fulfilled, (state, action) => {
         if (action.payload.calculation_id) {
           state.cartInfo.calculation_id = action.payload.calculation_id;
-          // Увеличиваем счетчик товаров
-          state.cartInfo.item_count += 1;
+          // item_count обновится автоматически через getIsolationCartInfo, вызванный в addMaterialToCalcIsolation
         }
       })
       .addCase(addMaterialToCalcIsolation.rejected, (state) => {
@@ -383,20 +399,17 @@ const calculationsSlice = createSlice({
       })
       // Form Calculation
       .addCase(formCalcIsolation.fulfilled, (state, action) => {
-        // Обновляем статус текущей заявки на "completed"
+        // Обновляем статус текущей заявки на "formed"
         if (state.currentCalculation) {
-          state.currentCalculation.status = action.payload.status || 'completed';
+          state.currentCalculation.status = action.payload.status || 'formed';
         }
         // Обновляем статус в списке заявок
         const calculationIndex = state.calculations.findIndex(calc => calc.id === action.payload.calculation_id);
         if (calculationIndex !== -1) {
-          state.calculations[calculationIndex].status = action.payload.status || 'completed';
+          state.calculations[calculationIndex].status = action.payload.status || 'formed';
         }
-        // Очищаем корзину, так как заявка больше не черновик
-        if (state.cartInfo.calculation_id === action.payload.calculation_id) {
-          state.cartInfo.calculation_id = null;
-          state.cartInfo.item_count = 0;
-        }
+        // НЕ очищаем корзину - расчет завершен, но материалы остаются в корзине с результатами
+        // Корзина будет обновлена через loadCartFromDB с результатами расчета
       })
       // Delete Calculation
       .addCase(deleteCalcIsolation.fulfilled, (state, action) => {

@@ -10,20 +10,26 @@ import './CalculationsListPage.css';
 const CalculationsListPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
-    const { calculations, loading, error } = useSelector((state: RootState) => state.calculations);
+    const { calculations: calculationsState, loading, error } = useSelector((state: RootState) => state.calculations);
+    // Убеждаемся, что calculations всегда массив
+    const calculations = Array.isArray(calculationsState) ? calculationsState : [];
     const { isAuthenticated } = useSelector((state: RootState) => state.user);
     
     const [dateFrom, setDateFrom] = useState<string>('');
     const [dateTo, setDateTo] = useState<string>('');
-    const [statusFilter, setStatusFilter] = useState<string>('completed'); // По умолчанию "Завершённые"
+    const [statusFilter, setStatusFilter] = useState<string>(''); // По умолчанию "Все"
 
     useEffect(() => {
         if (!isAuthenticated) {
             navigate('/login');
             return;
         }
-        // Загружаем рассчёты с выбранным статусом
-        dispatch(getCalcIsolationList({ status: statusFilter }));
+        // Загружаем рассчёты с выбранным статусом (если пусто - все статусы)
+        const filters: any = {};
+        if (statusFilter) {
+            filters.status = statusFilter;
+        }
+        dispatch(getCalcIsolationList(filters));
     }, [dispatch, navigate, isAuthenticated, statusFilter]);
 
     // Short Polling: автоматическое обновление списка заявок каждые 10 секунд
@@ -33,7 +39,10 @@ const CalculationsListPage: React.FC = () => {
         }
 
         const fetchCalculations = () => {
-            const filters: any = { status: statusFilter, silent: true }; // silent: true для тихого обновления
+            const filters: any = { silent: true }; // silent: true для тихого обновления
+            if (statusFilter) {
+                filters.status = statusFilter;
+            }
             if (dateFrom) {
                 filters.formed_from = dateFrom;
             }
@@ -53,7 +62,10 @@ const CalculationsListPage: React.FC = () => {
 
     const handleFilter = (e: React.FormEvent) => {
         e.preventDefault();
-        const filters: any = { status: statusFilter };
+        const filters: any = {};
+        if (statusFilter) {
+            filters.status = statusFilter;
+        }
         if (dateFrom) {
             filters.formed_from = dateFrom;
         }
@@ -66,8 +78,8 @@ const CalculationsListPage: React.FC = () => {
     const handleReset = () => {
         setDateFrom('');
         setDateTo('');
-        setStatusFilter('completed');
-        dispatch(getCalcIsolationList({ status: 'completed' }));
+        setStatusFilter('');
+        dispatch(getCalcIsolationList({}));
     };
 
     const handleTriggerAsyncCalculation = (calculationId: number) => {
@@ -173,8 +185,9 @@ const CalculationsListPage: React.FC = () => {
                                         onChange={(e) => setStatusFilter(e.target.value)}
                                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
                                     >
-                                        <option value="completed">Завершённые</option>
+                                        <option value="">Все</option>
                                         <option value="formed">Сформированные</option>
+                                        <option value="completed">Завершённые</option>
                                     </Form.Select>
                                 </Form.Group>
                             </Col>

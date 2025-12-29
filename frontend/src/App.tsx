@@ -31,6 +31,8 @@ import CalculationPage from './pages/CalculationPage/CalculationPage';
 interface CartItem {
   material: Material;
   quantity: number;
+  result_freq?: number;
+  result_percent?: number;
 }
 
 // Контекст корзины с интеграцией БД
@@ -66,6 +68,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const [calculationId, setCalculationId] = React.useState<number | null>(null);
   const [comments, setComments] = React.useState<Record<number, string>>({});
+  const prevItemCountRef = React.useRef<number>(0);
 
   // Загружаем корзину из БД при инициализации только если пользователь авторизован
   React.useEffect(() => {
@@ -77,21 +80,31 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
   }, [isAuthenticated]);
 
-  // Синхронизируем корзину с Redux state только при изменении calculation_id
+  // Синхронизируем корзину с Redux state при изменении calculation_id или item_count
   React.useEffect(() => {
     if (!isAuthenticated) return;
     
     if (cartInfo.calculation_id && cartInfo.calculation_id !== calculationId) {
       // Если calculation_id изменился, загружаем корзину заново
       console.log('CartInfo changed, reloading cart. calculation_id:', cartInfo.calculation_id, 'item_count:', cartInfo.item_count);
+      prevItemCountRef.current = cartInfo.item_count;
       loadCartFromDB();
+    } else if (cartInfo.calculation_id && cartInfo.calculation_id === calculationId) {
+      // Если calculation_id тот же, но item_count изменился, перезагружаем корзину
+      // Это происходит когда добавляется/удаляется материал
+      if (cartInfo.item_count !== prevItemCountRef.current) {
+        console.log('Item count changed, reloading cart. Redux count:', cartInfo.item_count, 'Previous count:', prevItemCountRef.current);
+        prevItemCountRef.current = cartInfo.item_count;
+        loadCartFromDB();
+      }
     } else if (!cartInfo.calculation_id && calculationId) {
       // Если корзина была очищена в Redux, очищаем локальное состояние
       setCart([]);
       setComments({});
       setCalculationId(null);
+      prevItemCountRef.current = 0;
     }
-  }, [cartInfo.calculation_id, isAuthenticated, calculationId]);
+  }, [cartInfo.calculation_id, cartInfo.item_count, isAuthenticated, calculationId]);
 
   const loadCartFromDB = async () => {
     console.log('loadCartFromDB called');
@@ -164,10 +177,16 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             `Материал: ${item.material.material}`
           ]
         },
-        quantity: item.quantity
+        quantity: item.quantity,
+        result_freq: item.result_freq,
+        result_percent: item.result_percent
       }));
       
       setCart(cartItems);
+      
+      // Обновляем счетчик для отслеживания изменений (суммируем quantity всех элементов)
+      const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      prevItemCountRef.current = totalItems;
       
       // Сохраняем комментарии
       const commentsMap: Record<number, string> = {};
@@ -619,7 +638,7 @@ const CartPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
   const { cartInfo } = useSelector((state: RootState) => state.calculations);
-  const { cart, removeFromCart, updateQuantity, updateComment, clearCart, formCalculation } = useCart();
+  const { cart, removeFromCart, updateQuantity, updateComment, clearCart, formCalculation, loadCartFromDB } = useCart();
   const [mass, setMass] = React.useState('');
   const [frequency, setFrequency] = React.useState('');
   const [results, setResults] = React.useState<any[]>([]);
@@ -667,7 +686,10 @@ const CartPage: React.FC = () => {
         }));
         if (formCalcIsolationAction.fulfilled.match(result)) {
           setResults(result.payload.calculation_results || []);
-          alert('Рассчёт успешно сформирован! Статус изменен на "завершён".');
+          // Обновляем корзину с результатами расчета из БД
+          if (cartInfo.calculation_id) {
+            await loadCartFromDB();
+          }
         } else {
           alert('Ошибка при формировании рассчёта');
         }
@@ -774,7 +796,10 @@ const CartPage: React.FC = () => {
               </div>
             ) : (
               cart.map((item) => {
-                const result = results.find(r => r.material_id === item.material.id);
+                // Используем результаты из самого item (загружены из БД) или из массива results (для обратной совместимости)
+                const result = item.result_freq !== undefined && item.result_percent !== undefined 
+                  ? { result_freq: item.result_freq, result_percent: item.result_percent }
+                  : results.find(r => r.material_id === item.material.id);
                 return (
                   <div key={item.material.id} className="result-card" style={{
                     padding: '1.5rem',

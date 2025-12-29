@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Material } from '../types/simple';
 import { cosineSimilarity } from '../utils/math';
 
@@ -50,22 +50,12 @@ export const useMaterialSearch = (initialMaterials: Material[]) => {
             return;
         }
 
-        // Подготавливаем материалы для обработки: создаем описания на английском
-        // Если description пустое, используем name и характеристики
+        // Используем описания из БД (они уже на английском языке)
         const materialsForEmbedding = initialMaterials.map(material => {
-            // Создаем подробное описание на английском для CLIP
-            // Важно: CLIP работает лучше с английским языком
-            const description = material.description || 
-                `Rubber vibration isolation material. ` +
-                `Material type: ${material.material || 'rubber'}. ` +
-                `Thickness: ${material.thickness || 0} millimeters. ` +
-                `Density: ${material.density || 0} kilograms per cubic meter. ` +
-                `Used for vibration damping and noise reduction.`;
-            
             return {
                 id: material.id,
                 name: material.name,
-                description: description
+                description: material.description || ''
             };
         });
 
