@@ -131,14 +131,14 @@ const userSlice = createSlice({
       state.error = null;
     },
     logout: (state) => {
-      // Очищаем состояние при выходе
+      // Очищаем состояние при выходе (при обновлении страницы)
+      // Токен НЕ удаляем из localStorage, чтобы он оставался там
       state.username = '';
       state.fullName = '';
       state.email = '';
       state.isAuthenticated = false;
       state.token = null;
       state.error = null;
-      localStorage.removeItem('token');
       sessionStorage.removeItem('session_active');
       delete axios.defaults.headers.common['Authorization'];
     },

@@ -41,7 +41,7 @@ axios.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Токен истек или недействителен
-      localStorage.removeItem('token');
+      // Токен НЕ удаляем из localStorage, чтобы он оставался там
       delete axios.defaults.headers.common['Authorization'];
       // Можно перенаправить на страницу входа
       if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {

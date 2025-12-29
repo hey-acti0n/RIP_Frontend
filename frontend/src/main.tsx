@@ -14,8 +14,7 @@ const navigationType = performance.getEntriesByType('navigation')[0] as Performa
 const isPageReload = navigationType?.type === 'reload' || sessionStorage.getItem('page_reload') === 'true';
 
 if (isPageReload) {
-  // Это обновление страницы (F5) - очищаем токен и выходим из аккаунта
-  localStorage.removeItem('token');
+  // Это обновление страницы (F5) - выходим из аккаунта, но токен оставляем в localStorage
   sessionStorage.removeItem('page_reload');
   sessionStorage.removeItem('session_active');
   store.dispatch(logout());
